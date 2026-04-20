@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health Tracker — Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body class="dashboard-page">
+
+  <!--
+    <header> wraps the top navigation bar of the app.
+    This is semantic — it tells browsers and screen readers
+    "this is the site header", not just a styled box.
+  -->
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-mark-sm" aria-hidden="true">HT</span>
+      <span class="header-app-name">Health Tracker</span>
+    </div>
+
+    <!--
+      <nav> for the main navigation links — semantically meaningful
+      for accessibility tools and search engines.
+    -->
+    <nav class="header-nav" aria-label="Main navigation">
+      <button class="nav-btn active" data-section="overview"   aria-current="page">Overview</button>
+      <button class="nav-btn"        data-section="exercise">Exercise</button>
+      <button class="nav-btn"        data-section="diet">Diet</button>
+      <button class="nav-btn"        data-section="goals">Goals</button>
+      <button class="nav-btn"        data-section="stats">Stats</button>
+      <button class="nav-btn"        data-section="groups">Groups</button>
+    </nav>
+
+    <!-- User menu -->
+    <div class="header-user">
+      <!-- This greeting is filled in dynamically by dashboard.js -->
+      <span id="user-greeting" class="user-greeting">Hey, —</span>
+      <button class="btn btn-outline btn-sm" id="logout-btn">Log Out</button>
+    </div>
+  </header>
+
+  <!--
+    <main> wraps all primary page content.
+    Each <section> inside represents a different "tab" of the dashboard.
+    dashboard.js shows/hides them based on which nav button is clicked.
+  -->
+  <main class="dashboard-main">
+
+    <!-- ── OVERVIEW SECTION ──────────────────────────── -->
+    <section id="section-overview" class="dash-section active" aria-label="Overview">
+      <h2 class="section-heading">Today's Overview</h2>
+
+      <!-- Summary stat cards — data filled by dashboard.js -->
+      <div class="stats-grid">
+        <article class="stat-card" aria-label="Calories burned today">
+          <p class="stat-label">Calories Burned</p>
+          <p class="stat-value" id="overview-cal-burned">—</p>
+          <p class="stat-unit">kcal</p>
+        </article>
+        <article class="stat-card" aria-label="Calories consumed today">
+          <p class="stat-label">Calories Consumed</p>
+          <p class="stat-value" id="overview-cal-consumed">—</p>
+          <p class="stat-unit">kcal</p>
+        </article>
+        <article class="stat-card" aria-label="Exercise sessions today">
+          <p class="stat-label">Sessions Today</p>
+          <p class="stat-value" id="overview-sessions">—</p>
+          <p class="stat-unit">logged</p>
+        </article>
+        <article class="stat-card accent" aria-label="Active goals">
+          <p class="stat-label">Active Goals</p>
+          <p class="stat-value" id="overview-goals">—</p>
+          <p class="stat-unit">in progress</p>
+        </article>
+      </div>
+
+      <!-- Recent exercise list for today -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Today's Exercise</h3>
+        <ul id="overview-exercise-list" class="activity-list" aria-label="Today's exercise entries">
+          <li class="empty-state">No exercise logged yet — get moving!</li>
+        </ul>
+      </div>
+
+      <!-- Today's meals -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Today's Meals</h3>
+        <ul id="overview-meal-list" class="activity-list" aria-label="Today's meal entries">
+          <li class="empty-state">No meals logged yet.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── EXERCISE SECTION ──────────────────────────── -->
+    <section id="section-exercise" class="dash-section" aria-label="Log Exercise" hidden>
+      <h2 class="section-heading">Log Exercise</h2>
+
+      <div class="dashboard-card">
+        <!-- Category toggle: Cardio or Strength -->
+        <div class="category-toggle" role="group" aria-label="Exercise category">
+          <button class="toggle-btn active" data-category="cardio" id="toggle-cardio">
+            Cardio
+          </button>
+          <button class="toggle-btn" data-category="strength" id="toggle-strength">
+            Strength
+          </button>
+        </div>
+
+        <form id="exercise-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ex-type">Activity type</label>
+              <select id="ex-type" name="activity_type" required>
+                <option value="">Select type</option>
+                <option value="Running">Running</option>
+                <option value="Cycling">Cycling</option>
+                <option value="Swimming">Swimming</option>
+                <option value="Walking">Walking</option>
+                <option value="HIIT">HIIT</option>
+                <option value="Rowing">Rowing</option>
+                <option value="Bench Press">Bench Press</option>
+                <option value="Squat">Squat</option>
+                <option value="Deadlift">Deadlift</option>
+                <option value="Overhead Press">Overhead Press</option>
+                <option value="Pull Ups">Pull Ups</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="ex-name">Exercise name</label>
+              <input
+                type="text"
+                id="ex-name"
+                name="activity_name"
+                placeholder="e.g. Morning Run"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Cardio fields — shown/hidden by dashboard.js -->
+          <div id="cardio-fields" class="conditional-fields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="ex-duration">Duration (mins)</label>
+                <input type="number" id="ex-duration" name="duration_mins" min="1" placeholder="30" />
+              </div>
+              <div class="form-group">
+                <label for="ex-distance">Distance (km)</label>
+                <input type="number" id="ex-distance" name="distance_km" min="0" step="0.1" placeholder="5.0" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Strength fields — shown/hidden by dashboard.js -->
+          <div id="strength-fields" class="conditional-fields" hidden>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="ex-sets">Sets</label>
+                <input type="number" id="ex-sets" name="sets" min="1" max="100" placeholder="3" />
+              </div>
+              <div class="form-group">
+                <label for="ex-reps">Reps per set</label>
+                <input type="number" id="ex-reps" name="reps" min="1" max="200" placeholder="10" />
+              </div>
+              <div class="form-group">
+                <label for="ex-weight">Weight (kg)</label>
+                <input type="number" id="ex-weight" name="weight_kg_used" min="0" step="0.5" placeholder="60.0" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ex-calories">Calories burned <span class="hint">(estimate)</span></label>
+            <input type="number" id="ex-calories" name="calories_burned" min="0" placeholder="250" />
+          </div>
+
+          <p class="form-message" id="exercise-message" aria-live="polite"></p>
+
+          <button type="submit" class="btn btn-primary" id="exercise-submit-btn">
+            Log Exercise
+          </button>
+        </form>
+      </div>
+
+      <!-- Recent exercise history -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Recent History</h3>
+        <ul id="exercise-history-list" class="activity-list" aria-label="Exercise history">
+          <li class="empty-state">No exercise recorded yet.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── DIET SECTION ──────────────────────────────── -->
+    <section id="section-diet" class="dash-section" aria-label="Log Diet" hidden>
+      <h2 class="section-heading">Log a Meal</h2>
+
+      <div class="dashboard-card">
+        <form id="diet-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="diet-food-name">Food name</label>
+              <input
+                type="text"
+                id="diet-food-name"
+                name="food_name"
+                placeholder="e.g. Chicken Breast"
+                list="food-suggestions"
+                required
+              />
+              <!-- datalist provides autocomplete suggestions linked to the input above -->
+              <datalist id="food-suggestions"></datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="diet-meal-type">Meal</label>
+              <select id="diet-meal-type" name="meal_type" required>
+                <option value="">Select meal</option>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="diet-calories">Calories (kcal)</label>
+              <input
+                type="number"
+                id="diet-calories"
+                name="calories"
+                min="0"
+                placeholder="350"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="diet-quantity">Quantity / portions</label>
+              <input
+                type="number"
+                id="diet-quantity"
+                name="quantity"
+                min="0.1"
+                step="0.1"
+                value="1"
+                placeholder="1"
+              />
+            </div>
+          </div>
+
+          <!-- Goal feedback — filled in by dashboard.js after logging -->
+          <output id="calorie-goal-feedback" class="goal-feedback" aria-live="polite"></output>
+
+          <p class="form-message" id="diet-message" aria-live="polite"></p>
+
+          <button type="submit" class="btn btn-primary" id="diet-submit-btn">
+            Log Meal
+          </button>
+        </form>
+      </div>
+
+      <!-- Add a custom food item -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Add Custom Food</h3>
+        <form id="custom-food-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="custom-food-name">Food name</label>
+              <input type="text" id="custom-food-name" name="name" placeholder="My Protein Shake" required />
+            </div>
+            <div class="form-group">
+              <label for="custom-food-calories">Calories</label>
+              <input type="number" id="custom-food-calories" name="calories" min="0" placeholder="300" required />
+            </div>
+          </div>
+          <p class="form-message" id="custom-food-message" aria-live="polite"></p>
+          <button type="submit" class="btn btn-secondary">Add to My Foods</button>
+        </form>
+      </div>
+
+      <!-- Today's meals list -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Today's Food Log</h3>
+        <p class="calorie-total">Daily total: <strong id="diet-daily-total">0</strong> kcal</p>
+        <ul id="diet-today-list" class="activity-list" aria-label="Today's food entries">
+          <li class="empty-state">No meals logged today.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── GOALS SECTION ──────────────────────────────── -->
+    <section id="section-goals" class="dash-section" aria-label="Goals" hidden>
+      <h2 class="section-heading">Your Goals</h2>
+
+      <div class="dashboard-card">
+        <h3 class="card-heading">Set a New Goal</h3>
+        <form id="goal-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="goal-type">Goal type</label>
+              <select id="goal-type" name="goal_type" required>
+                <option value="">Select type</option>
+                <option value="weight">Target weight (kg)</option>
+                <option value="run_distance">Run distance (km)</option>
+                <option value="calories_burned">Calories burned / week</option>
+                <option value="steps">Daily steps</option>
+                <option value="workout_sessions">Workouts per week</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="goal-target">Target value</label>
+              <input type="number" id="goal-target" name="target_value" min="0" step="0.1" placeholder="70" required />
+            </div>
+
+            <div class="form-group">
+              <label for="goal-date">Target date</label>
+              <input type="date" id="goal-date" name="target_date" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="goal-description">Description <span class="hint">(optional)</span></label>
+            <input type="text" id="goal-description" name="description" placeholder="e.g. Get to 70kg before summer" />
+          </div>
+
+          <p class="form-message" id="goal-message" aria-live="polite"></p>
+          <button type="submit" class="btn btn-primary">Set Goal</button>
+        </form>
+      </div>
+
+      <!-- List of active and completed goals -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Active Goals</h3>
+        <ul id="goals-list" class="goals-list" aria-label="Your goals">
+          <li class="empty-state">No goals set yet. Set your first goal above!</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── STATS SECTION ──────────────────────────────── -->
+    <section id="section-stats" class="dash-section" aria-label="Statistics" hidden>
+      <h2 class="section-heading">Statistics</h2>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <p class="stat-label">Calories Burned (7 days)</p>
+          <p class="stat-value" id="stat-cal-burned">—</p>
+          <p class="stat-unit">kcal</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Exercise Sessions (7 days)</p>
+          <p class="stat-value" id="stat-sessions">—</p>
+          <p class="stat-unit">sessions</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Calories Consumed (7 days)</p>
+          <p class="stat-value" id="stat-cal-consumed">—</p>
+          <p class="stat-unit">kcal</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Total Workout Time (7 days)</p>
+          <p class="stat-value" id="stat-minutes">—</p>
+          <p class="stat-unit">mins</p>
+        </article>
+      </div>
+
+      <p class="stats-note" id="stats-loading">Loading your stats...</p>
+    </section>
+
+    <!-- ── GROUPS SECTION ──────────────────────────────── -->
+    <section id="section-groups" class="dash-section" aria-label="Groups" hidden>
+      <h2 class="section-heading">Groups</h2>
+
+      <div class="dashboard-card">
+        <h3 class="card-heading">Create a Group</h3>
+        <form id="create-group-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="group-name">Group name</label>
+              <input type="text" id="group-name" name="name" placeholder="Morning Crew" required />
+            </div>
+          </div>
+          <p class="form-message" id="create-group-message" aria-live="polite"></p>
+          <button type="submit" class="btn btn-primary">Create Group</button>
+        </form>
+        <!-- Invite code is shown here after creation -->
+        <div id="invite-code-display" class="invite-code-box" hidden aria-live="polite"></div>
+      </div>
+
+      <div class="dashboard-card">
+        <h3 class="card-heading">Join a Group</h3>
+        <form id="join-group-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="join-invite-code">Invite code</label>
+              <input type="text" id="join-invite-code" name="invite_code" placeholder="A3B9KX" maxlength="8" required />
+            </div>
+          </div>
+          <p class="form-message" id="join-group-message" aria-live="polite"></p>
+          <button type="submit" class="btn btn-secondary">Join Group</button>
+        </form>
+      </div>
+
+      <div class="dashboard-card">
+        <h3 class="card-heading">My Groups</h3>
+        <ul id="groups-list" class="groups-list" aria-label="Groups you belong to">
+          <li class="empty-state">You haven't joined any groups yet.</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <!--
+    dashboard.js is linked here at the bottom of the body.
+    All JavaScript for the dashboard lives in this one file —
+    no inline scripts anywhere in this HTML.
+  -->
+  <script src="/js/dashboard.js"></script>
+
+</body>
+</html>
