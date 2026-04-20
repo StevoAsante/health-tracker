@@ -197,91 +197,131 @@
 
     <!-- ── DIET SECTION ──────────────────────────────── -->
     <section id="section-diet" class="dash-section" aria-label="Log Diet" hidden>
-      <h2 class="section-heading">Log a Meal</h2>
+      <h2 class="section-heading">Diet & Nutrition</h2>
 
-      <div class="dashboard-card">
-        <form id="diet-form" novalidate>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="diet-food-name">Food name</label>
-              <input
-                type="text"
-                id="diet-food-name"
-                name="food_name"
-                placeholder="e.g. Chicken Breast"
-                list="food-suggestions"
-                required
-              />
-              <!-- datalist provides autocomplete suggestions linked to the input above -->
-              <datalist id="food-suggestions"></datalist>
+      <!-- Diet tabs -->
+      <nav class="diet-tabs" role="tablist" aria-label="Diet options">
+        <button
+          class="diet-tab-btn active"
+          id="tab-log-meal"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-log-meal"
+          data-tab="log-meal"
+        >
+          Log Meal
+        </button>
+        <button
+          class="diet-tab-btn"
+          id="tab-custom-food"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-custom-food"
+          data-tab="custom-food"
+        >
+          Add Custom Food
+        </button>
+      </nav>
+
+      <!-- Log Meal Panel -->
+      <div
+        id="panel-log-meal"
+        class="diet-panel active"
+        role="tabpanel"
+        aria-labelledby="tab-log-meal"
+      >
+        <div class="dashboard-card">
+          <form id="diet-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="diet-food-name">Food name</label>
+                <input
+                  type="text"
+                  id="diet-food-name"
+                  name="food_name"
+                  placeholder="Start typing to search foods..."
+                  autocomplete="off"
+                  required
+                />
+                <!-- Dropdown for food suggestions -->
+                <div id="food-suggestions-dropdown" class="suggestions-dropdown" style="display: none;"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="diet-meal-type">Meal</label>
+                <select id="diet-meal-type" name="meal_type" required>
+                  <option value="">Select meal</option>
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="dinner">Dinner</option>
+                  <option value="snack">Snack</option>
+                </select>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="diet-meal-type">Meal</label>
-              <select id="diet-meal-type" name="meal_type" required>
-                <option value="">Select meal</option>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-                <option value="snack">Snack</option>
-              </select>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="diet-calories">Calories (kcal)</label>
+                <input
+                  type="number"
+                  id="diet-calories"
+                  name="calories"
+                  min="0"
+                  placeholder="350"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="diet-quantity">Quantity / portions</label>
+                <input
+                  type="number"
+                  id="diet-quantity"
+                  name="quantity"
+                  min="0.1"
+                  step="0.1"
+                  value="1"
+                  placeholder="1"
+                />
+              </div>
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="diet-calories">Calories (kcal)</label>
-              <input
-                type="number"
-                id="diet-calories"
-                name="calories"
-                min="0"
-                placeholder="350"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="diet-quantity">Quantity / portions</label>
-              <input
-                type="number"
-                id="diet-quantity"
-                name="quantity"
-                min="0.1"
-                step="0.1"
-                value="1"
-                placeholder="1"
-              />
-            </div>
-          </div>
+            <!-- Goal feedback — filled in by dashboard.js after logging -->
+            <output id="calorie-goal-feedback" class="goal-feedback" aria-live="polite"></output>
 
-          <!-- Goal feedback — filled in by dashboard.js after logging -->
-          <output id="calorie-goal-feedback" class="goal-feedback" aria-live="polite"></output>
+            <p class="form-message" id="diet-message" aria-live="polite"></p>
 
-          <p class="form-message" id="diet-message" aria-live="polite"></p>
-
-          <button type="submit" class="btn btn-primary" id="diet-submit-btn">
-            Log Meal
-          </button>
-        </form>
+            <button type="submit" class="btn btn-primary" id="diet-submit-btn">
+              Log Meal
+            </button>
+          </form>
+        </div>
       </div>
 
-      <!-- Add a custom food item -->
-      <div class="dashboard-card">
-        <h3 class="card-heading">Add Custom Food</h3>
-        <form id="custom-food-form" novalidate>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="custom-food-name">Food name</label>
-              <input type="text" id="custom-food-name" name="name" placeholder="My Protein Shake" required />
+      <!-- Custom Food Panel -->
+      <div
+        id="panel-custom-food"
+        class="diet-panel"
+        role="tabpanel"
+        aria-labelledby="tab-custom-food"
+        style="display: none;"
+      >
+        <div class="dashboard-card">
+          <h3 class="card-heading">Add Custom Food</h3>
+          <form id="custom-food-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="custom-food-name">Food name</label>
+                <input type="text" id="custom-food-name" name="name" placeholder="My Protein Shake" required />
+              </div>
+              <div class="form-group">
+                <label for="custom-food-calories">Calories per serving</label>
+                <input type="number" id="custom-food-calories" name="calories" min="0" placeholder="300" required />
+              </div>
             </div>
-            <div class="form-group">
-              <label for="custom-food-calories">Calories</label>
-              <input type="number" id="custom-food-calories" name="calories" min="0" placeholder="300" required />
-            </div>
-          </div>
-          <p class="form-message" id="custom-food-message" aria-live="polite"></p>
-          <button type="submit" class="btn btn-secondary">Add to My Foods</button>
-        </form>
+            <p class="form-message" id="custom-food-message" aria-live="polite"></p>
+            <button type="submit" class="btn btn-secondary">Add to My Foods</button>
+          </form>
+        </div>
       </div>
 
       <!-- Today's meals list -->
@@ -369,6 +409,14 @@
           <p class="stat-value" id="stat-minutes">—</p>
           <p class="stat-unit">mins</p>
         </article>
+      </div>
+
+      <!-- Goal Progress Section -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Goal Progress</h3>
+        <div id="goal-progress-container">
+          <p class="empty-state">No active goals to track progress against.</p>
+        </div>
       </div>
 
       <p class="stats-note" id="stats-loading">Loading your stats...</p>

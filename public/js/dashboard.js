@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── STEP 4: WIRE UP ALL FORMS ───────────────────────────
   setupExerciseForm();
   setupDietForm();
+  setupDietTabs();
   setupGoalsForm();
   setupGroupForms();
 
@@ -398,31 +399,108 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedback   = document.getElementById('calorie-goal-feedback');
 
     // ── Food name autocomplete ──────────────────────────────
-    // When the user types in the food name field, search our food list
-    const foodInput    = document.getElementById('diet-food-name');
-    const foodDatalist = document.getElementById('food-suggestions');
+    // When the user types in the food name field, show a dropdown with suggestions
+    const foodInput        = document.getElementById('diet-food-name');
+    const suggestionsDiv   = document.getElementById('food-suggestions-dropdown');
+    const caloriesInput    = document.getElementById('diet-calories');
+
+    let currentSuggestions = [];
+    let selectedIndex      = -1;
+
+    // Position the dropdown relative to the input
+    foodInput.parentElement.style.position = 'relative';
 
     // We debounce the input — wait 300ms after typing stops before searching
-    // This avoids hammering the server with a request for every keystroke
     let searchTimeout;
     foodInput.addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(async () => {
         const query = foodInput.value.trim();
-        if (query.length < 2) return; // Don't search for very short strings
+        selectedIndex = -1;
+
+        if (query.length < 1) {
+          suggestionsDiv.style.display = 'none';
+          return;
+        }
 
         try {
           const response = await fetch(`/api/diet/foods?search=${encodeURIComponent(query)}`);
           const data     = await response.json();
 
-          // Populate the <datalist> element with matching food names
-          // The browser uses datalist to show autocomplete suggestions
-          foodDatalist.innerHTML = (data.foods || [])
-            .map(food => `<option value="${food.name}" data-calories="${food.calories}">`)
-            .join('');
-        } catch { /* Silently ignore search errors */ }
+          currentSuggestions = data.foods || [];
+
+          if (currentSuggestions.length > 0) {
+            // Show dropdown with suggestions
+            suggestionsDiv.innerHTML = currentSuggestions
+              .map((food, index) => `<div class="suggestion-item" data-index="${index}" data-calories="${food.calories}">${food.name}</div>`)
+              .join('');
+            suggestionsDiv.style.display = 'block';
+          } else {
+            suggestionsDiv.style.display = 'none';
+          }
+        } catch (error) {
+          console.error('Food search error:', error);
+          suggestionsDiv.style.display = 'none';
+        }
       }, 300);
     });
+
+    // Handle clicking on suggestions
+    suggestionsDiv.addEventListener('click', (event) => {
+      if (event.target.classList.contains('suggestion-item')) {
+        const index = parseInt(event.target.dataset.index);
+        const food = currentSuggestions[index];
+        selectSuggestion(food);
+      }
+    });
+
+    // Handle keyboard navigation
+    foodInput.addEventListener('keydown', (event) => {
+      if (suggestionsDiv.style.display === 'none') return;
+
+      const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        updateHighlight();
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateHighlight();
+      } else if (event.key === 'Enter' && selectedIndex >= 0) {
+        event.preventDefault();
+        const food = currentSuggestions[selectedIndex];
+        selectSuggestion(food);
+      } else if (event.key === 'Escape') {
+        suggestionsDiv.style.display = 'none';
+        selectedIndex = -1;
+      }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      if (!foodInput.parentElement.contains(event.target)) {
+        suggestionsDiv.style.display = 'none';
+        selectedIndex = -1;
+      }
+    });
+
+    function selectSuggestion(food) {
+      foodInput.value = food.name;
+      caloriesInput.value = food.calories;
+      suggestionsDiv.style.display = 'none';
+      selectedIndex = -1;
+      // Focus on the meal type select for better UX
+      document.getElementById('diet-meal-type').focus();
+    }
+
+    function updateHighlight() {
+      const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+      items.forEach((item, index) => {
+        item.classList.toggle('highlighted', index === selectedIndex);
+      });
+    }
 
     // ── Main diet form submission ──────────────────────────
     dietForm.addEventListener('submit', async (event) => {
@@ -567,6 +645,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ============================================================
+  // SECTION: Diet Tabs
+  // ============================================================
+
+  /**
+   * setupDietTabs — makes the diet tab buttons work.
+   * Clicking a tab shows the corresponding panel.
+   */
+  function setupDietTabs() {
+    const tabButtons = document.querySelectorAll('.diet-tab-btn');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.dataset.tab;
+
+        // Update tab button states
+        tabButtons.forEach(btn => {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-selected', 'false');
+        });
+
+        button.classList.add('active');
+        button.setAttribute('aria-selected', 'true');
+
+        // Show the correct panel
+        document.querySelectorAll('.diet-panel').forEach(panel => {
+          panel.style.display = 'none';
+          panel.classList.remove('active');
+        });
+
+        const targetPanel = document.getElementById(`panel-${targetTab}`);
+        if (targetPanel) {
+          targetPanel.style.display = 'flex';
+          targetPanel.classList.add('active');
+        }
+      });
+    });
+  }
+
+
+  // ============================================================
   // SECTION: Goals Form
   // ============================================================
 
@@ -685,21 +803,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * loadStats — fetches the 7-day summaries for exercise and diet
-   * and fills in the statistics section.
+   * and fills in the statistics section with goal progress.
    */
   async function loadStats() {
     const loadingNote = document.getElementById('stats-loading');
+    const progressContainer = document.getElementById('goal-progress-container');
     loadingNote.textContent = 'Loading your stats...';
 
     try {
-      // Fetch both exercise and diet weekly summaries at the same time
-      const [exRes, dietRes] = await Promise.all([
+      // Fetch exercise, diet, and goals data
+      const [exRes, dietRes, goalsRes] = await Promise.all([
         fetch('/api/exercise/weekly-summary'),
-        fetch('/api/diet/weekly-summary')
+        fetch('/api/diet/weekly-summary'),
+        fetch('/api/goals/list')
       ]);
 
       const exData   = await exRes.json();
       const dietData = await dietRes.json();
+      const goalsData = await goalsRes.json();
 
       // Fill in the stat card values
       document.getElementById('stat-cal-burned').textContent   = exData.summary.total_calories_burned  || 0;
@@ -707,12 +828,107 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('stat-cal-consumed').textContent = dietData.summary.total_calories_week  || 0;
       document.getElementById('stat-minutes').textContent      = exData.summary.total_minutes          || 0;
 
+      // Calculate and display goal progress
+      displayGoalProgress(goalsData.goals, exData.summary, dietData.summary);
+
       loadingNote.textContent = 'Stats updated for the past 7 days.';
 
     } catch (error) {
       console.error('Stats load error:', error.message);
       loadingNote.textContent = 'Could not load stats. Please try again.';
     }
+  }
+
+  /**
+   * displayGoalProgress — shows visual progress bars for active goals
+   * based on current weekly activity.
+   */
+  function displayGoalProgress(goals, exerciseSummary, dietSummary) {
+    const container = document.getElementById('goal-progress-container');
+
+    if (!goals || goals.length === 0) {
+      container.innerHTML = '<p class="empty-state">No active goals to track progress against.</p>';
+      return;
+    }
+
+    const activeGoals = goals.filter(goal => goal.status === 'active');
+    if (activeGoals.length === 0) {
+      container.innerHTML = '<p class="empty-state">No active goals to track progress against.</p>';
+      return;
+    }
+
+    container.innerHTML = activeGoals.map(goal => {
+      const progress = calculateGoalProgress(goal, exerciseSummary, dietSummary);
+      const percentage = Math.min(progress.percentage, 100);
+      const statusText = progress.current >= goal.target_value ?
+        'Goal achieved this week!' : `${progress.current} / ${goal.target_value} ${goal.unit}`;
+
+      return `
+        <div class="goal-progress-item">
+          <div class="goal-progress-header">
+            <div class="goal-progress-title">${goal.description || getGoalTypeLabel(goal.goal_type)}</div>
+            <div class="goal-progress-value">${Math.round(percentage)}%</div>
+          </div>
+          <div class="goal-progress-bar">
+            <div class="goal-progress-fill ${goal.goal_type}" style="width: ${percentage}%"></div>
+          </div>
+          <div class="goal-progress-text">${statusText}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /**
+   * calculateGoalProgress — calculates progress percentage for a goal
+   * based on weekly activity data.
+   */
+  function calculateGoalProgress(goal, exerciseSummary, dietSummary) {
+    let current = 0;
+    let unit = '';
+
+    switch (goal.goal_type) {
+      case 'calories_burned':
+        current = exerciseSummary.total_calories_burned || 0;
+        unit = 'kcal';
+        break;
+      case 'workout_sessions':
+        current = exerciseSummary.total_sessions || 0;
+        unit = 'sessions';
+        break;
+      case 'run_distance':
+        // This would need to be calculated from exercise entries with activity_type = 'running'
+        // For now, we'll show 0 as we don't have this data in the summary
+        current = 0;
+        unit = 'km';
+        break;
+      case 'weight':
+      case 'steps':
+        // These would require additional data tracking
+        current = 0;
+        unit = goal.goal_type === 'weight' ? 'kg' : 'steps';
+        break;
+      default:
+        current = 0;
+        unit = '';
+    }
+
+    const percentage = goal.target_value > 0 ? (current / goal.target_value) * 100 : 0;
+
+    return { current, percentage, unit };
+  }
+
+  /**
+   * getGoalTypeLabel — returns a human-readable label for goal types.
+   */
+  function getGoalTypeLabel(goalType) {
+    const labels = {
+      'weight': 'Target Weight',
+      'run_distance': 'Running Distance',
+      'calories_burned': 'Weekly Calories Burned',
+      'steps': 'Daily Steps',
+      'workout_sessions': 'Weekly Workouts'
+    };
+    return labels[goalType] || goalType;
   }
 
 
