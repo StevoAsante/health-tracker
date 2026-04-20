@@ -3,236 +3,240 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Health Tracker — Sign In</title>
+  <title>Health Tracker — Log In</title>
+
+  <!--
+    Linking our external stylesheet.
+    NO styles are written in this file — all CSS lives in style.css.
+    This keeps the HTML clean and makes styles easy to find and edit.
+  -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
 
-  <div class="page-center">
-    <div class="auth-card">
+<body class="auth-page">
 
-      <!-- Logo -->
-      <div class="auth-logo">
-        <div class="logo-icon-lg">🏃</div>
-        <h2>Health Tracker</h2>
-        <p style="color:var(--text-muted);font-size:0.875rem;margin-top:4px">
-          Track your exercise, diet and goals
-        </p>
-      </div>
+  <!--
+    <main> is a semantic element that wraps the primary content of the page.
+    Screen readers and search engines use it to identify the main area.
+    It replaces a generic <div id="main"> or <div class="container">.
+  -->
+  <main class="auth-container">
 
-      <!-- Tab switcher: Login vs Register -->
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tab-login"    onclick="showTab('login')">Sign in</button>
-        <button class="auth-tab"        id="tab-register" onclick="showTab('register')">Create account</button>
-      </div>
+    <!-- App brand / identity -->
+    <header class="auth-header">
+      <div class="logo-mark" aria-hidden="true">HT</div>
+      <h1 class="brand-name">Health Tracker</h1>
+      <p class="brand-tagline">Tailoring your lifestyle plans at your fingertips.</p>
+    </header>
 
-      <!-- Feedback message area — shown on success or error -->
-      <div id="auth-alert" class="alert hidden"></div>
+    <!--
+      Tab navigation to switch between Login and Register forms.
+      <nav> is a semantic element for navigation links.
+    -->
+    <nav class="auth-tabs" role="tablist" aria-label="Login or Register">
+      <button
+        class="tab-btn active"
+        id="tab-login"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-login"
+        data-tab="login"
+      >
+        Log In
+      </button>
+      <button
+        class="tab-btn"
+        id="tab-register"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-register"
+        data-tab="register"
+      >
+        Sign Up
+      </button>
+    </nav>
 
-      <!-- ── LOGIN FORM ───────────────────────────────────── -->
-      <form id="login-form" onsubmit="handleLogin(event)">
+    <!-- ── LOGIN PANEL ─────────────────────────────── -->
+    <!--
+      <section> groups related content with a meaningful label.
+      role="tabpanel" and aria-labelledby link it to its tab button.
+    -->
+    <section
+      id="panel-login"
+      class="auth-panel active"
+      role="tabpanel"
+      aria-labelledby="tab-login"
+    >
+      <!--
+        <form> is the correct semantic element for any data-entry form.
+        We use id="login-form" so auth.js can find this specific form.
+        action="#" and method="post" are defaults — our JS intercepts
+        submission so the page never actually navigates away.
+      -->
+      <form id="login-form" novalidate>
+        <h2 class="panel-heading">Welcome back</h2>
 
         <div class="form-group">
-          <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="you@example.com" required />
+          <label for="login-email">Email address</label>
+          <input
+            type="email"
+            id="login-email"
+            name="email"
+            placeholder="you@email.com"
+            autocomplete="email"
+            required
+          />
         </div>
 
         <div class="form-group">
           <label for="login-password">Password</label>
-          <input type="password" id="login-password" placeholder="Your password" required />
+          <input
+            type="password"
+            id="login-password"
+            name="password"
+            placeholder="Your password"
+            autocomplete="current-password"
+            required
+          />
         </div>
 
-        <button type="submit" class="btn btn-primary btn-full" id="login-btn">
-          Sign in
+        <!--
+          aria-live="polite" tells screen readers to announce
+          any error messages that appear inside this element.
+        -->
+        <p class="form-message" id="login-message" aria-live="polite"></p>
+
+        <button type="submit" class="btn btn-primary btn-full" id="login-submit-btn">
+          Log In
         </button>
-
       </form>
+    </section>
 
-      <!-- ── REGISTER FORM ────────────────────────────────── -->
-      <!-- hidden by default — showTab() switches between them -->
-      <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+    <!-- ── REGISTER PANEL ──────────────────────────── -->
+    <section
+      id="panel-register"
+      class="auth-panel"
+      role="tabpanel"
+      aria-labelledby="tab-register"
+      hidden
+    >
+      <form id="register-form" novalidate>
+        <h2 class="panel-heading">Create your account</h2>
 
         <div class="form-row">
           <div class="form-group">
             <label for="reg-username">Username</label>
-            <input type="text" id="reg-username" placeholder="alex01" required />
-            <div class="field-error hidden" id="err-username"></div>
+            <input
+              type="text"
+              id="reg-username"
+              name="username"
+              placeholder="alex01"
+              autocomplete="username"
+              required
+            />
           </div>
+
           <div class="form-group">
             <label for="reg-name">Full name</label>
-            <input type="text" id="reg-name" placeholder="Alex Smith" required />
+            <input
+              type="text"
+              id="reg-name"
+              name="real_name"
+              placeholder="Alex Smith"
+              autocomplete="name"
+              required
+            />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="reg-email">Email</label>
-          <input type="email" id="reg-email" placeholder="you@example.com" required />
+          <label for="reg-email">Email address</label>
+          <input
+            type="email"
+            id="reg-email"
+            name="email"
+            placeholder="you@email.com"
+            autocomplete="email"
+            required
+          />
         </div>
 
         <div class="form-group">
-          <label for="reg-password">Password</label>
-          <input type="password" id="reg-password" placeholder="At least 6 characters" required />
+          <label for="reg-password">Password <span class="hint">(min. 6 characters)</span></label>
+          <input
+            type="password"
+            id="reg-password"
+            name="password"
+            placeholder="Create a password"
+            autocomplete="new-password"
+            required
+          />
         </div>
 
-        <!-- Physical details — used for BMI calculation -->
-        <div class="form-row">
-          <div class="form-group">
-            <label for="reg-height">Height (cm)</label>
-            <input type="number" id="reg-height" placeholder="175" min="100" max="250" />
+        <!-- Physical stats — optional but used for BMI and health overview -->
+        <fieldset class="stats-fieldset">
+          <legend>Physical details <span class="hint">(optional)</span></legend>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-height">Height (cm)</label>
+              <input
+                type="number"
+                id="reg-height"
+                name="height_cm"
+                placeholder="175"
+                min="100"
+                max="250"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="reg-weight">Weight (kg)</label>
+              <input
+                type="number"
+                id="reg-weight"
+                name="weight_kg"
+                placeholder="70"
+                min="30"
+                max="300"
+                step="0.1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="reg-age">Age</label>
+              <input
+                type="number"
+                id="reg-age"
+                name="age"
+                placeholder="22"
+                min="13"
+                max="120"
+              />
+            </div>
           </div>
-          <div class="form-group">
-            <label for="reg-weight">Weight (kg)</label>
-            <input type="number" id="reg-weight" placeholder="70" min="30" max="300" step="0.1" />
-          </div>
-        </div>
+        </fieldset>
 
-        <div class="form-group">
-          <label for="reg-age">Age</label>
-          <input type="number" id="reg-age" placeholder="22" min="16" max="100" />
-        </div>
+        <p class="form-message" id="register-message" aria-live="polite"></p>
 
-        <button type="submit" class="btn btn-primary btn-full" id="register-btn">
-          Create account
+        <button type="submit" class="btn btn-primary btn-full" id="register-submit-btn">
+          Create Account
         </button>
-
       </form>
+    </section>
 
-    </div>
-  </div>
+  </main>
 
-  <script>
-    // ── Tab switching ──────────────────────────────────────
-    // Shows the login or register form, hides the other.
-    function showTab(tab) {
-      const loginForm    = document.getElementById('login-form');
-      const registerForm = document.getElementById('register-form');
-      const tabLogin     = document.getElementById('tab-login');
-      const tabRegister  = document.getElementById('tab-register');
+  <!--
+    The JavaScript file is loaded at the BOTTOM of the body.
+    This is a best practice: the HTML is fully parsed before the
+    script runs, so getElementById() and querySelector() can find
+    all the elements they need without errors.
 
-      // Clear any old alert messages when switching tabs
-      hideAlert();
-
-      if (tab === 'login') {
-        loginForm.classList.remove('hidden');
-        registerForm.classList.add('hidden');
-        tabLogin.classList.add('active');
-        tabRegister.classList.remove('active');
-      } else {
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-        tabLogin.classList.remove('active');
-        tabRegister.classList.add('active');
-      }
-    }
-
-    // ── Alert helpers ─────────────────────────────────────
-    function showAlert(message, type = 'error') {
-      const alert = document.getElementById('auth-alert');
-      alert.textContent = message;
-      alert.className = `alert alert-${type}`;  // applies the right colour class
-    }
-
-    function hideAlert() {
-      const alert = document.getElementById('auth-alert');
-      alert.className = 'alert hidden';
-    }
-
-    // ── Handle login form submit ───────────────────────────
-    async function handleLogin(event) {
-      // event.preventDefault() stops the page from refreshing on form submit —
-      // the default HTML form behaviour, which we don't want here.
-      event.preventDefault();
-      hideAlert();
-
-      const btn = document.getElementById('login-btn');
-      btn.textContent = 'Signing in…';
-      btn.disabled = true;
-
-      const email    = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-
-      try {
-        // fetch() sends an HTTP request to our backend.
-        // We POST JSON data to /api/auth/login.
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          // response.ok is false when the status code is 4xx or 5xx
-          showAlert(data.error || 'Login failed.');
-        } else {
-          // Login worked — go to the dashboard
-          window.location.href = '/dashboard';
-        }
-
-      } catch (error) {
-        // This catches network errors (e.g. server is down)
-        showAlert('Could not connect to the server. Is it running?');
-      } finally {
-        // Re-enable the button regardless of outcome
-        btn.textContent = 'Sign in';
-        btn.disabled = false;
-      }
-    }
-
-    // ── Handle register form submit ────────────────────────
-    async function handleRegister(event) {
-      event.preventDefault();
-      hideAlert();
-
-      const btn = document.getElementById('register-btn');
-      btn.textContent = 'Creating account…';
-      btn.disabled = true;
-
-      const body = {
-        username:  document.getElementById('reg-username').value,
-        real_name: document.getElementById('reg-name').value,
-        email:     document.getElementById('reg-email').value,
-        password:  document.getElementById('reg-password').value,
-        height_cm: document.getElementById('reg-height').value || null,
-        weight_kg: document.getElementById('reg-weight').value || null,
-        age:       document.getElementById('reg-age').value    || null
-      };
-
-      try {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showAlert(data.error || 'Registration failed.');
-        } else {
-          // Registration creates a session automatically — go straight to dashboard
-          window.location.href = '/dashboard';
-        }
-
-      } catch (error) {
-        showAlert('Could not connect to the server.');
-      } finally {
-        btn.textContent = 'Create account';
-        btn.disabled = false;
-      }
-    }
-
-    // On page load: if already logged in, skip this page
-    (async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) window.location.href = '/dashboard';
-      } catch (e) {
-        // Not logged in — stay on this page, nothing to do
-      }
-    })();
-  </script>
+    All JS logic for this page lives in auth.js — nothing is
+    written inline in this file.
+  -->
+  <script src="/js/auth.js"></script>
 
 </body>
 </html>

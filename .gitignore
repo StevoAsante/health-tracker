@@ -1,0 +1,55 @@
+# ============================================================
+# .gitignore - Files Git Should Never Track
+# ============================================================
+# Any file or folder listed here will be ignored by Git.
+# This protects sensitive data and keeps the repo clean.
+# ============================================================
+
+# --- Environment Variables (CRITICAL - never commit this!)
+# Each team member has their own .env with their own DB password.
+# Committing .env would expose everyone's credentials.
+.env
+
+# --- Node Modules
+# This folder contains all downloaded packages (hundreds of MB).
+# It's recreated by running: npm install
+# So there's no need to store it in Git.
+node_modules/
+
+# --- macOS System Files
+# macOS automatically creates these files in every folder.
+# They store folder display settings and are not part of the project.
+.DS_Store
+**/.DS_Store
+
+# --- Editor Settings
+# VS Code stores workspace settings in these folders.
+# Each developer's setup is personal, so don't commit these.
+.vscode/
+.idea/
+
+# --- Test Coverage Reports
+# Jest generates a 'coverage' folder when you run tests with coverage.
+# It's large and auto generated, so don't commit it.
+coverage/
+
+# --- Build Outputs
+# If we ever add a build step, outputs go here.
+dist/
+build/
+
+# --- Logs
+# Node.js and npm sometimes write log files.
+*.log
+npm-debug.log*
+
+
+# --- Experimental or Temporary Files
+# If you create any temporary files or folders during development, add them here.
+packagee.json
+indexx.js
+dbb.js
+exercisee.js
+authh.js
+indexx.html
+stylee.css

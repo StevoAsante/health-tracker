@@ -1,86 +1,101 @@
 // ============================================================
-// auth.js — Authentication Routes (Register & Login)
+// auth.js — Authentication Routes
 // ============================================================
-// This file handles two things:
-//   POST /api/auth/register — create a new user account
-//   POST /api/auth/login    — log an existing user in
-//   POST /api/auth/logout   — log the current user out
-//   GET  /api/auth/me       — get the currently logged-in user's info
+// Handles user registration, login, logout, and fetching the
+// current logged-in user's profile.
 //
-// Security principle used here: we NEVER store plain-text passwords.
-// We use bcrypt to "hash" a password into an unreadable string.
-// When someone logs in, we compare their input to the stored hash.
+// ENDPOINTS:
+//   POST /api/auth/register  → Create a new account
+//   POST /api/auth/login     → Log in to an existing account
+//   POST /api/auth/logout    → End the current session
+//   GET  /api/auth/me        → Get logged-in user's profile data
+//
+// SECURITY NOTE:
+//   Passwords are NEVER stored as plain text. We use bcrypt to
+//   hash them into an irreversible scrambled string. When someone
+//   logs in, bcrypt compares their input against the stored hash.
 // ============================================================
 
 const express = require('express');
 const bcrypt  = require('bcrypt');
-const db      = require('../db'); // Our PostgreSQL connection
+const db      = require('../db');
 
-// express.Router() creates a mini-app that handles a subset of routes.
-// In index.js we attach it to '/api/auth', so every route here
-// is automatically prefixed with /api/auth.
+// Router creates a mini Express app for just these routes.
+// In index.js we mount this at '/api/auth', so every route
+// defined here is automatically prefixed with /api/auth.
 const router = express.Router();
 
-// ── HELPER: Email format validator ─────────────────────────
-// A simple function that checks if an email looks valid.
-// It uses a "regular expression" (regex) — a pattern-matching rule.
-// This checks for the basic pattern: something@something.something
+// ── HELPER: Email Format Validator ──────────────────────
+// Checks whether a string looks like a valid email address.
+// Uses a regular expression — a pattern that describes what
+// a valid email should look like: something@something.something
 function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailPattern.test(email);
 }
 
-// ── POST /api/auth/register ─────────────────────────────────
-// Handles new user registration.
-// The browser sends: { username, real_name, email, password, height_cm, weight_kg, age }
+// ── POST /api/auth/register ──────────────────────────────
+// Creates a new user account.
+// The browser sends a JSON body with all registration fields.
 router.post('/register', async (req, res) => {
-  // Destructure: pull individual values out of the request body object.
-  // This is the same as writing:  const username = req.body.username; etc.
-  const { username, real_name, email, password, height_cm, weight_kg, age } = req.body;
+  // Pull values out of the request body.
+  // 'async' and 'await' let us write asynchronous code (like DB queries)
+  // that reads like normal top-to-bottom code. Without them, we'd need
+  // nested callback functions, which get hard to follow quickly.
+  const {
+    username,
+    real_name,
+    email,
+    password,
+    height_cm,
+    weight_kg,
+    age
+  } = req.body;
 
-  // ── Step 1: Validate inputs ───────────────────────────────
-  // Check that all required fields are present and not empty.
+  // ── Step 1: Validate required fields ─────────────────
   if (!username || !real_name || !email || !password) {
-    // HTTP status 400 = "Bad Request" — the user sent incomplete data.
+    // HTTP 400 = Bad Request — the client sent incomplete data
     return res.status(400).json({ error: 'Username, name, email and password are all required.' });
   }
 
-  // Check the email is in a valid format (e.g. alex@gmail.com)
   if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
   }
 
-  // Enforce a minimum password length for basic security.
   if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
   }
 
-  // ── Step 2: Check username and email are unique ───────────
+  // ── Step 2: Check uniqueness ──────────────────────────
+  // We wrap everything in try/catch so database errors don't crash the server.
+  // try = "attempt this code", catch = "if anything goes wrong, do this instead"
   try {
-    // Query the database to see if the username or email already exists.
     // $1 and $2 are placeholders — pg replaces them with the actual values.
-    // This prevents SQL injection attacks (a common security vulnerability).
-    const existingUser = await db.query(
+    // This is called a "parameterised query" and it prevents SQL injection,
+    // which is a common attack where malicious input breaks your SQL code.
+    const existing = await db.query(
       'SELECT id FROM users WHERE username = $1 OR email = $2',
       [username.toLowerCase(), email.toLowerCase()]
     );
 
-    if (existingUser.rows.length > 0) {
-      // rows is an array of matching database records.
-      // If it's not empty, a user with that username/email already exists.
+    // rows is an array of matching database records.
+    // If it has any entries, the username or email is already taken.
+    if (existing.rows.length > 0) {
+      // HTTP 409 = Conflict — the resource already exists
       return res.status(409).json({ error: 'Username or email is already taken.' });
     }
 
-    // ── Step 3: Hash the password ─────────────────────────────
-    // bcrypt.hash() scrambles the password using a one-way algorithm.
-    // The '12' is the "salt rounds" — higher = more secure but slower.
-    // 12 is a good balance for a real app.
-    // 'await' pauses here until hashing is done (it takes a moment).
+    // ── Step 3: Hash the password ─────────────────────
+    // bcrypt.hash() takes a plain password and runs it through a
+    // one-way mathematical function 2^12 (4096) times.
+    // The result is a long scrambled string we store in the database.
+    // Even if someone stole the database, they couldn't reverse the hash.
+    // 'await' pauses here until hashing finishes (it takes ~200ms intentionally).
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // ── Step 4: Insert the new user into the database ─────────
-    // We store the hashed password, NOT the original one.
-    // RETURNING id means the query gives back the new user's ID immediately.
+    // ── Step 4: Insert the new user ───────────────────
+    // RETURNING means PostgreSQL immediately gives us back the new row's data.
+    // We use || null so optional fields default to null if not provided.
     const result = await db.query(
       `INSERT INTO users (username, real_name, email, password, height_cm, weight_kg, age)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -90,126 +105,122 @@ router.post('/register', async (req, res) => {
         real_name,
         email.toLowerCase(),
         hashedPassword,
-        height_cm || null,   // null if not provided — these fields are optional
+        height_cm || null,
         weight_kg || null,
         age || null
       ]
     );
 
-    // result.rows[0] is the first (and only) row returned by the INSERT.
-    const newUser = result.rows[0];
+    const newUser = result.rows[0]; // The newly created user row
 
-    // ── Step 5: Automatically log the user in ─────────────────
-    // After registering, we set the session so the user is immediately logged in.
-    // req.session is an object we can attach any data to.
-    // It gets saved to the 'sessions' table in the database automatically.
-    req.session.userId = newUser.id;
+    // ── Step 5: Log the user in automatically ─────────
+    // We attach data to req.session — this object is automatically saved
+    // to the 'sessions' table in the database. The browser gets a cookie
+    // with the session ID, and on future requests the server reads it
+    // to know who is making the request.
+    req.session.userId   = newUser.id;
     req.session.username = newUser.username;
 
-    // HTTP status 201 = "Created" — a new resource was successfully created.
-    res.status(201).json({
-      message: 'Registration successful! Welcome to Health Tracker.',
+    // HTTP 201 = Created — a new resource was successfully made
+    return res.status(201).json({
+      message: 'Account created successfully! Welcome to Health Tracker.',
       user: {
-        id: newUser.id,
-        username: newUser.username,
+        id:        newUser.id,
+        username:  newUser.username,
         real_name: newUser.real_name,
-        email: newUser.email
+        email:     newUser.email
       }
     });
 
   } catch (error) {
-    // If anything unexpected goes wrong, log it on the server and
-    // send a generic error back to the browser (don't reveal technical details).
+    // Log the full technical error server-side for debugging.
+    // Send only a generic message to the browser — never expose internal errors.
     console.error('Registration error:', error.message);
-    res.status(500).json({ error: 'Registration failed. Please try again.' });
+    return res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 });
 
-// ── POST /api/auth/login ────────────────────────────────────
-// Handles user login.
-// The browser sends: { email, password }
+// ── POST /api/auth/login ─────────────────────────────────
+// Verifies credentials and starts a session for the user.
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Validate that both fields were provided
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
   try {
-    // Look up the user by email in the database.
+    // Look up the user by email address
     const result = await db.query(
       'SELECT * FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
-    // If no user found with that email
+    // If no user found — we use the same error message as wrong password.
+    // This prevents attackers from knowing which part was wrong.
     if (result.rows.length === 0) {
-      // We use the same message for "wrong email" and "wrong password"
-      // to avoid telling attackers which part was wrong.
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({ error: 'Invalid email or password.' }); // 401 = Unauthorized
     }
 
-    const user = result.rows[0]; // The matching user row from the database
+    const user = result.rows[0];
 
-    // Compare the entered password against the stored hash.
-    // bcrypt.compare() hashes the input and checks if it matches.
-    // It returns true or false.
+    // bcrypt.compare() hashes the typed password and checks if it matches
+    // the stored hash. Returns true or false.
     const passwordMatches = await bcrypt.compare(password, user.password);
 
     if (!passwordMatches) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Password is correct — create a session for this user.
-    req.session.userId = user.id;
+    // Credentials are correct — create the session
+    req.session.userId   = user.id;
     req.session.username = user.username;
 
-    // HTTP 200 = "OK" — success
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Login successful!',
       user: {
-        id: user.id,
-        username: user.username,
+        id:        user.id,
+        username:  user.username,
         real_name: user.real_name,
-        email: user.email
+        email:     user.email
       }
     });
 
   } catch (error) {
     console.error('Login error:', error.message);
-    res.status(500).json({ error: 'Login failed. Please try again.' });
+    return res.status(500).json({ error: 'Login failed. Please try again.' });
   }
 });
 
-// ── POST /api/auth/logout ───────────────────────────────────
-// Destroys the user's session, effectively logging them out.
+// ── POST /api/auth/logout ────────────────────────────────
+// Destroys the current session, effectively logging the user out.
 router.post('/logout', (req, res) => {
-  // req.session.destroy() removes the session from the database.
-  // The callback runs when it's done.
+  // session.destroy() removes the session from the database.
+  // The callback runs once it's done.
   req.session.destroy((error) => {
     if (error) {
-      return res.status(500).json({ error: 'Logout failed.' });
+      return res.status(500).json({ error: 'Logout failed. Please try again.' });
     }
-    // Clear the session cookie from the browser too
+    // Also clear the cookie from the browser
     res.clearCookie('connect.sid');
-    res.status(200).json({ message: 'Logged out successfully.' });
+    return res.status(200).json({ message: 'Logged out successfully.' });
   });
 });
 
-// ── GET /api/auth/me ────────────────────────────────────────
-// Returns the currently logged-in user's profile data.
-// The dashboard calls this on load to know who is logged in.
+// ── GET /api/auth/me ─────────────────────────────────────
+// Returns the logged-in user's profile.
+// The dashboard calls this on load to display the user's name, stats, etc.
 router.get('/me', async (req, res) => {
-  // Check if there's an active session
+  // Check if there's an active session with a userId
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not logged in.' });
   }
 
   try {
-    // Fetch the user's profile — note we DON'T select the password column.
+    // Fetch user data — note we DO NOT select the password column
     const result = await db.query(
-      'SELECT id, username, real_name, email, height_cm, weight_kg, age, created_at FROM users WHERE id = $1',
+      `SELECT id, username, real_name, email, height_cm, weight_kg, age, created_at
+       FROM users WHERE id = $1`,
       [req.session.userId]
     );
 
@@ -217,13 +228,13 @@ router.get('/me', async (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    res.status(200).json({ user: result.rows[0] });
+    return res.status(200).json({ user: result.rows[0] });
 
   } catch (error) {
-    console.error('Get user error:', error.message);
-    res.status(500).json({ error: 'Could not retrieve user data.' });
+    console.error('Get profile error:', error.message);
+    return res.status(500).json({ error: 'Could not load profile.' });
   }
 });
 
-// Export the router so index.js can use it
+// Export the router so index.js can mount it
 module.exports = router;

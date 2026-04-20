@@ -1,108 +1,139 @@
-// exercise.js — handles everything to do with exercise logging
+// ============================================================
+// exercise.js — Exercise Logging Routes
+// ============================================================
+// Handles recording exercise sessions and retrieving history.
 //
-// Routes in here:
-//   POST /api/exercise       — save a new session
-//   GET  /api/exercise       — fetch all past sessions for the logged-in user
-//   GET  /api/exercise/today — just today's sessions (for the dashboard card)
-//   DELETE /api/exercise/:id — remove a session the user logged by mistake
+// ENDPOINTS:
+//   POST /api/exercise/log      → Log a new exercise session
+//   GET  /api/exercise/history  → Get the user's exercise history
+//   GET  /api/exercise/today    → Get today's exercises only
+//
+// IMPORTANT DESIGN NOTE — Cardio vs Strength:
+//   Cardio exercises (running, cycling) need duration/distance.
+//   Strength exercises (bench press, squats) need sets/reps/weight.
+//   We store ALL fields in one table, but only the relevant ones
+//   will be filled — the rest stay as NULL.
+//   The 'exercise_category' column tells us which type it is.
+// ============================================================
 
 const express = require('express');
 const db      = require('../db');
+const router  = express.Router();
 
-const router = express.Router();
-
-// Every route in this file requires the user to be logged in.
-// Rather than repeating that check in each handler, we do it once
-// with middleware — a function that runs before the real handler.
-//
-// If req.session.userId is missing, the user isn't logged in.
-// We stop here and return 401 (Unauthorised) instead of continuing.
+// ── MIDDLEWARE: Require Login ────────────────────────────
+// This function checks that the user is logged in before
+// allowing access to any exercise route.
+// We use it as middleware on each route that needs protection.
 function requireLogin(req, res, next) {
   if (!req.session.userId) {
+    // 401 = Unauthorized — not logged in
     return res.status(401).json({ error: 'You must be logged in to do that.' });
   }
-  next(); // all good — move on to the actual route handler
+  // next() tells Express to continue to the actual route handler
+  next();
 }
 
-// Apply the middleware to every route in this file.
-// The '*' means "match any path handled by this router".
-router.use('*', requireLogin);
+// ── POST /api/exercise/log ───────────────────────────────
+// Logs a new exercise session for the currently logged-in user.
+//
+// For CARDIO:  send { activity_type, activity_name, exercise_category: 'cardio', duration_mins, distance_km, calories_burned }
+// For STRENGTH: send { activity_type, activity_name, exercise_category: 'strength', sets, reps, weight_kg_used, calories_burned }
+router.post('/log', requireLogin, async (req, res) => {
+  const {
+    activity_type,
+    activity_name,
+    exercise_category, // 'cardio' or 'strength'
+    duration_mins,
+    distance_km,
+    sets,
+    reps,
+    weight_kg_used,    // weight used for the exercise (e.g. 80kg bench press)
+    calories_burned
+  } = req.body;
 
-
-// ── POST /api/exercise ─────────────────────────────────────────────────────
-// Saves one exercise session to the database.
-// The body should contain: activity_type, activity_name, duration_mins,
-// distance_km (optional), calories_burned (optional).
-
-router.post('/', async (req, res) => {
-  const { activity_type, activity_name, duration_mins, distance_km, calories_burned } = req.body;
-
-  // Both type and name are required — reject if either is missing.
-  if (!activity_type || !activity_name) {
-    return res.status(400).json({ error: 'Activity type and name are required.' });
+  // Validate required fields — every exercise needs at minimum a type and name
+  if (!activity_type || !activity_name || !exercise_category) {
+    return res.status(400).json({
+      error: 'Activity type, name and category (cardio/strength) are required.'
+    });
   }
 
-  // duration_mins must be a positive number. parseFloat handles "45.5" etc.
-  if (!duration_mins || parseFloat(duration_mins) <= 0) {
-    return res.status(400).json({ error: 'Duration must be a positive number.' });
+  // Make sure exercise_category is one of the two valid options
+  if (!['cardio', 'strength'].includes(exercise_category)) {
+    return res.status(400).json({
+      error: "Exercise category must be 'cardio' or 'strength'."
+    });
   }
 
   try {
+    // Insert the exercise entry into the database.
+    // Fields that don't apply (e.g. weight_kg_used for a cardio run) will be null.
+    // This is fine — PostgreSQL stores null for optional columns.
     const result = await db.query(
       `INSERT INTO exercise_entries
-         (user_id, activity_type, activity_name, duration_mins, distance_km, calories_burned)
-       VALUES ($1, $2, $3, $4, $5, $6)
+         (user_id, activity_type, activity_name, exercise_category,
+          duration_mins, distance_km, sets, reps, weight_kg_used, calories_burned)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         req.session.userId,
         activity_type,
         activity_name,
-        parseInt(duration_mins),
-        distance_km  ? parseFloat(distance_km)  : null,
-        calories_burned ? parseInt(calories_burned) : null
+        exercise_category,
+        duration_mins  || null,
+        distance_km    || null,
+        sets           || null,
+        reps           || null,
+        weight_kg_used || null,
+        calories_burned|| null
       ]
     );
 
-    res.status(201).json({
-      message: 'Exercise logged successfully.',
-      exercise: result.rows[0]
+    const newEntry = result.rows[0];
+
+    return res.status(201).json({
+      message: 'Exercise logged successfully!',
+      entry: newEntry
     });
 
   } catch (error) {
     console.error('Exercise log error:', error.message);
-    res.status(500).json({ error: 'Could not save exercise. Try again.' });
+    return res.status(500).json({ error: 'Failed to save exercise. Please try again.' });
   }
 });
 
+// ── GET /api/exercise/history ────────────────────────────
+// Returns all exercise entries for the logged-in user,
+// most recent first, with a default limit of 50.
+router.get('/history', requireLogin, async (req, res) => {
+  // Allow the client to request a different number of records
+  // via a URL parameter, e.g. /api/exercise/history?limit=10
+  const limit = parseInt(req.query.limit) || 50;
 
-// ── GET /api/exercise ──────────────────────────────────────────────────────
-// Returns all exercise sessions for the current user, newest first.
-// The dashboard history tab calls this.
-
-router.get('/', async (req, res) => {
   try {
     const result = await db.query(
       `SELECT * FROM exercise_entries
        WHERE user_id = $1
-       ORDER BY logged_at DESC`,
-      [req.session.userId]
+       ORDER BY logged_at DESC
+       LIMIT $2`,
+      [req.session.userId, limit]
     );
 
-    res.status(200).json({ exercises: result.rows });
+    return res.status(200).json({ entries: result.rows });
 
   } catch (error) {
-    console.error('Fetch exercises error:', error.message);
-    res.status(500).json({ error: 'Could not retrieve exercise history.' });
+    console.error('Exercise history error:', error.message);
+    return res.status(500).json({ error: 'Failed to load exercise history.' });
   }
 });
 
-
-// ── GET /api/exercise/today ────────────────────────────────────────────────
-// Returns only today's exercise entries — used on the main dashboard card.
-// We filter by date using PostgreSQL's DATE() cast so time is ignored.
-
-router.get('/today', async (req, res) => {
+// ── GET /api/exercise/today ──────────────────────────────
+// Returns only today's exercise entries for the logged-in user.
+// Used by the dashboard to show what the user has done today.
+router.get('/today', requireLogin, async (req, res) => {
   try {
+    // DATE(logged_at) compares only the date part (ignoring time).
+    // CURRENT_DATE is a PostgreSQL function that returns today's date.
     const result = await db.query(
       `SELECT * FROM exercise_entries
        WHERE user_id = $1
@@ -111,55 +142,35 @@ router.get('/today', async (req, res) => {
       [req.session.userId]
     );
 
-    // Also return a total for the day so the frontend doesn't have to add it up.
-    const totalMinutes = result.rows.reduce((sum, e) => sum + (e.duration_mins || 0), 0);
-    const totalCalories = result.rows.reduce((sum, e) => sum + (e.calories_burned || 0), 0);
-
-    res.status(200).json({
-      exercises: result.rows,
-      totals: { minutes: totalMinutes, calories: totalCalories }
-    });
+    return res.status(200).json({ entries: result.rows });
 
   } catch (error) {
-    console.error('Fetch today exercise error:', error.message);
-    res.status(500).json({ error: 'Could not retrieve today\'s exercise.' });
+    console.error('Today exercise error:', error.message);
+    return res.status(500).json({ error: 'Failed to load today\'s exercises.' });
   }
 });
 
-
-// ── DELETE /api/exercise/:id ───────────────────────────────────────────────
-// Deletes a specific exercise entry.
-// :id is a URL parameter — e.g. DELETE /api/exercise/42 deletes entry 42.
-//
-// We check the entry belongs to the logged-in user before deleting.
-// Without that check, any logged-in user could delete anyone else's data.
-
-router.delete('/:id', async (req, res) => {
-  const entryId = parseInt(req.params.id);
-
-  if (isNaN(entryId)) {
-    return res.status(400).json({ error: 'Invalid entry ID.' });
-  }
-
+// ── GET /api/exercise/weekly-summary ────────────────────
+// Returns total calories burned and exercise count for the past 7 days.
+// Used by the statistics/summary section of the dashboard.
+router.get('/weekly-summary', requireLogin, async (req, res) => {
   try {
     const result = await db.query(
-      `DELETE FROM exercise_entries
-       WHERE id = $1 AND user_id = $2
-       RETURNING id`,
-      [entryId, req.session.userId]
+      `SELECT
+         COUNT(*) AS total_sessions,
+         COALESCE(SUM(calories_burned), 0) AS total_calories_burned,
+         COALESCE(SUM(duration_mins), 0)   AS total_minutes
+       FROM exercise_entries
+       WHERE user_id = $1
+         AND logged_at >= NOW() - INTERVAL '7 days'`,
+      [req.session.userId]
     );
 
-    if (result.rows.length === 0) {
-      // Either the entry doesn't exist, or it belongs to someone else.
-      // We return 404 either way — no need to reveal the difference.
-      return res.status(404).json({ error: 'Entry not found.' });
-    }
-
-    res.status(200).json({ message: 'Exercise entry deleted.' });
+    return res.status(200).json({ summary: result.rows[0] });
 
   } catch (error) {
-    console.error('Delete exercise error:', error.message);
-    res.status(500).json({ error: 'Could not delete entry.' });
+    console.error('Weekly summary error:', error.message);
+    return res.status(500).json({ error: 'Failed to load weekly summary.' });
   }
 });
 

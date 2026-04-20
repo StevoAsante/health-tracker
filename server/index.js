@@ -1,123 +1,129 @@
 // ============================================================
-// index.js — The Express Server (Entry Point)
+// index.js — Main Express Server (Entry Point)
 // ============================================================
-// This is the heart of your backend. When you run:
-//   npm run dev
-// Node.js starts here and keeps the server running.
+// This is the first file Node.js runs when you do 'npm run dev'.
+// It sets up the web server, connects all the route files,
+// and starts listening for browser requests on port 3000.
 //
-// Express is a framework that makes it easy to:
-//   1. Listen for requests from the browser
-//   2. Route them to the right handler (e.g. /login goes to auth.js)
-//   3. Send responses back
+// Think of Express as the receptionist of a large building:
+//   - The browser makes a request (visitor arrives)
+//   - Express checks which route handles it (receptionist checks directory)
+//   - The right route handler deals with it (visitor goes to the right office)
 // ============================================================
 
-const express = require('express');
-const session = require('express-session');
-const PgSession = require('connect-pg-simple')(session);
-const path = require('path');
-const db = require('./db'); // Our database connection from db.js
+// Load environment variables from .env FIRST, before anything else.
+require('dotenv').config();
 
-// Create the Express application.
-// Think of 'app' as the manager of your web server.
+const express        = require('express');
+const session        = require('express-session');
+const PgSession      = require('connect-pg-simple')(session);
+const path           = require('path');
+const db             = require('./db');
+
+// Create the Express app — this is the object that manages everything.
 const app = express();
 
-// ── MIDDLEWARE ─────────────────────────────────────────────
-// Middleware runs on EVERY request before it reaches your routes.
-// It's like a security checkpoint at the entrance of a building.
+// ── MIDDLEWARE ────────────────────────────────────────────
+// Middleware are functions that run on EVERY request, in order,
+// before reaching your specific route handlers.
+// Think of them as a series of checkpoints every visitor passes through.
 
-// Parse incoming JSON data from the browser (e.g. from form submissions).
-// Without this, req.body would be undefined in your route handlers.
+// Parse JSON bodies — when the browser sends data as JSON, this
+// makes it available on req.body so route handlers can read it.
 app.use(express.json());
 
-// Parse URL-encoded form data (e.g. from HTML <form> elements).
+// Parse form data — handles classic HTML form submissions.
 app.use(express.urlencoded({ extended: true }));
 
-// Serve all files in the 'public' folder as static files.
-// This means the browser can access public/css/style.css at /css/style.css
-// and public/index.html at /index.html — automatically.
+// Serve everything in the 'public' folder as static files.
+// public/css/style.css becomes accessible at /css/style.css
+// public/index.html becomes accessible at /index.html
+// The browser can load these directly without going through a route handler.
 app.use(express.static(path.join(__dirname, '../public')));
 
-// ── SESSION SETUP ──────────────────────────────────────────
-// Sessions let the server remember who is logged in.
-// Each browser gets a unique session ID (stored as a cookie).
-// The session DATA (like the user's ID) is stored in the database.
+// ── SESSION SETUP ─────────────────────────────────────────
+// Sessions are how the server "remembers" that you're logged in
+// across multiple requests. HTTP is stateless by nature (each
+// request is independent), so sessions solve this by:
+//   1. Giving the browser a unique cookie (the session ID)
+//   2. Storing the session data (e.g. your user ID) in the database
+//   3. On each request, reading the cookie and loading your data
 app.use(session({
-  // Use PostgreSQL to store session data instead of memory.
-  // This means sessions survive server restarts.
+  // Store sessions in PostgreSQL instead of in memory.
+  // Memory storage would lose all sessions if the server restarts.
   store: new PgSession({
-    pool: db,             // Use our existing database connection pool
-    tableName: 'sessions' // The table we created in the schema
+    pool:      db,          // Use our existing database connection
+    tableName: 'sessions'   // The table we created in the SQL schema
   }),
 
-  // A secret key used to sign the session cookie.
-  // ⚠️ Change this to a long random string in a real app!
-  secret: 'health-tracker-secret-key-2026',
+  // The secret signs the session cookie so it can't be tampered with.
+  // Loaded from .env so it's never hardcoded in shared code.
+  secret: process.env.SESSION_SECRET || 'fallback-dev-secret',
 
-  resave: false,          // Don't save the session if it wasn't changed
+  resave:            false, // Don't re-save the session if nothing changed
   saveUninitialized: false, // Don't create a session until something is stored
 
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // Cookie lasts 24 hours (in milliseconds)
-    httpOnly: true,               // JavaScript in the browser cannot read this cookie
-    secure: false                 // Set to true only if using HTTPS
+    maxAge:   1000 * 60 * 60 * 24, // Session lasts 24 hours (in milliseconds)
+    httpOnly: true,                 // JavaScript in the browser can't read this cookie
+    secure:   false                 // Set to true only when using HTTPS
   }
 }));
 
-// ── ROUTES ─────────────────────────────────────────────────
-// Routes define what happens when the browser requests a specific URL.
-// We keep each group of routes in its own file to stay organised.
+// ── ROUTES ───────────────────────────────────────────────
+// Each group of related endpoints lives in its own file.
+// We import them here and mount them at a URL prefix.
+// For example, everything in auth.js is available under /api/auth
 
-// Import our route files
 const authRoutes     = require('./routes/auth');
 const exerciseRoutes = require('./routes/exercise');
 const dietRoutes     = require('./routes/diet');
 const goalRoutes     = require('./routes/goals');
 const groupRoutes    = require('./routes/groups');
 
-// Register routes with a URL prefix.
-// e.g. authRoutes handles: /api/auth/register, /api/auth/login, etc.
-// The '/api' prefix makes it clear these are data endpoints, not pages.
-app.use('/api/auth',     authRoutes);
-app.use('/api/exercise', exerciseRoutes);
-app.use('/api/diet',     dietRoutes);
-app.use('/api/goals',    goalRoutes);
-app.use('/api/groups',   groupRoutes);
+app.use('/api/auth',     authRoutes);      // /api/auth/login, /api/auth/register, etc.
+app.use('/api/exercise', exerciseRoutes);  // /api/exercise/log, /api/exercise/history, etc.
+app.use('/api/diet',     dietRoutes);      // /api/diet/log, /api/diet/history, etc.
+app.use('/api/goals',    goalRoutes);      // /api/goals/create, /api/goals/list, etc.
+app.use('/api/groups',   groupRoutes);     // /api/groups/create, /api/groups/join, etc.
 
-// ── PAGE ROUTES ────────────────────────────────────────────
-// These serve the actual HTML pages of the app.
+// ── PAGE ROUTES ──────────────────────────────────────────
+// These routes serve the actual HTML pages.
+// The static middleware above handles CSS/JS files automatically,
+// but we need these explicit routes for pages that need auth checks.
 
-// The home/login page — served at the root URL (/)
+// Root URL serves the login/register page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// The main dashboard — only accessible if logged in.
-// This is "middleware" specific to one route: if not logged in, go back to login.
+// Dashboard is protected — if not logged in, redirect to login.
+// req.session.userId is set when the user successfully logs in (in auth.js).
+// If it's not there, the user isn't logged in.
 app.get('/dashboard', (req, res) => {
   if (!req.session.userId) {
-    // req.session.userId is set when the user logs in (in auth.js).
-    // If it's not there, the user isn't logged in — redirect them.
     return res.redirect('/');
   }
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
-// ── 404 HANDLER ────────────────────────────────────────────
-// If no route above matched, send a friendly 404 error.
-// This must be the LAST app.use() — Express checks routes in order.
+// ── 404 HANDLER ──────────────────────────────────────────
+// If no route above matched the request, send a 404 error.
+// This MUST be the last app.use() because Express checks routes in order.
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// ── START THE SERVER ───────────────────────────────────────
-// Tell Express to start listening for requests on port 3000.
-// process.env.PORT lets you change the port via an environment variable
-// (useful when deploying). It falls back to 3000 locally.
+// ── START THE SERVER ─────────────────────────────────────
+// Tell Express to start listening for requests.
+// process.env.PORT lets deployment platforms set the port externally.
+// Falls back to 3000 for local development.
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Health Tracker server running at http://localhost:${PORT}`);
+  console.log(`🚀 Health Tracker running at http://localhost:${PORT}`);
 });
 
-// Export 'app' so our test files can import it and make test requests.
+// Export 'app' so our test files can import it and make requests
+// without actually starting a server (supertest handles that internally).
 module.exports = app;

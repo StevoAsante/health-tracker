@@ -1,632 +1,748 @@
 /* ============================================================
-   style.css — Health Tracker Design System
-   Inspired by: Strava, Apple Fitness, Ryse
-   Dark, athletic, minimal. No gradients for decoration.
+   style.css — Health Tracker Global Stylesheet
+   ============================================================
+   Design inspiration: Strava, Ryse Supplements, Apple Fitness
+   Aesthetic: Dark athletic — deep charcoal backgrounds,
+              sharp typography, electric green accent,
+              clean card-based layout
    ============================================================ */
 
-/* ── RESET ─────────────────────────────────────────────── */
+/* ── CSS VARIABLES (Design Tokens) ─────────────────────────
+   Define colours, fonts, and spacing once here as "variables".
+   Using var(--accent) everywhere means we only change one line
+   to retheme the entire app. Think of this like a settings file
+   for the visual design.
+   ─────────────────────────────────────────────────────────── */
+:root {
+  /* Core palette */
+  --bg-primary:    #0d0d0d;   /* Almost black — main background */
+  --bg-secondary:  #1a1a1a;   /* Dark charcoal — card backgrounds */
+  --bg-tertiary:   #252525;   /* Slightly lighter — inputs, hover states */
+  --bg-elevated:   #2e2e2e;   /* Even lighter — highlighted rows */
+
+  /* Text */
+  --text-primary:   #f0f0f0;  /* Near-white — main body text */
+  --text-secondary: #a0a0a0;  /* Mid-grey — labels, subtitles */
+  --text-muted:     #606060;  /* Darker grey — placeholders, hints */
+
+  /* Brand accent — electric green (Ryse / Strava energy) */
+  --accent:        #c8ff00;   /* Electric lime green */
+  --accent-dark:   #9fc800;   /* Slightly darker for hover states */
+  --accent-glow:   rgba(200, 255, 0, 0.15); /* Subtle glow for active elements */
+
+  /* Status colours */
+  --success: #4caf50;
+  --error:   #f44336;
+  --warning: #ff9800;
+  --info:    #2196f3;
+
+  /* Border and dividers */
+  --border:       #333333;
+  --border-light: #444444;
+
+  /* Spacing scale */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+
+  /* Typography */
+  --font-body:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:  'SF Mono', 'Fira Code', monospace;
+
+  /* Borders and radius */
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+  --radius-pill: 999px;
+
+  /* Transitions */
+  --transition: 0.2s ease;
+}
+
+/* ── GLOBAL RESET ─────────────────────────────────────────── */
+/* Remove default browser styles so we start from a clean slate */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* ── DESIGN TOKENS ─────────────────────────────────────── */
-/* Change a color here, it updates everywhere. */
-:root {
-  /* Backgrounds — layered dark surfaces */
-  --bg-base:    #08080F;   /* page background — near black */
-  --bg-surface: #0F0F1C;   /* cards and panels */
-  --bg-raised:  #17172A;   /* inputs, hover states */
-  --bg-overlay: #1E1E35;   /* dropdowns, modals */
-
-  /* Accent colors — each maps to a feature area */
-  --accent:        #00E5A0; /* mint green — primary brand, goals */
-  --accent-dark:   #00B87E; /* darker mint for hover states */
-  --accent-orange: #FF6B35; /* exercise / calories burned */
-  --accent-yellow: #FFB547; /* food / diet */
-  --accent-purple: #7C6FFF; /* goals / streaks */
-  --accent-red:    #FF4757; /* warnings, over-limit */
-
-  /* Text */
-  --text:       #FFFFFF;
-  --text-muted: #8080A0;
-  --text-dim:   #444460;
-
-  /* Borders */
-  --border:       rgba(255,255,255,0.07);
-  --border-hover: rgba(255,255,255,0.14);
-
-  /* Spacing */
-  --radius:    16px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
-
-  /* Transitions */
-  --transition: 0.18s ease;
-}
-
-/* ── BASE ───────────────────────────────────────────────── */
 html {
   font-size: 16px;
-  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: var(--bg-base);
-  color: var(--text);
-  /* Use the system UI font stack — clean and fast, no extra download */
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
-               'Inter', 'Segoe UI', sans-serif;
-  line-height: 1.5;
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased; /* Sharper text on macOS */
 }
 
+/* Headings */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Links */
 a {
   color: var(--accent);
   text-decoration: none;
 }
+a:hover { text-decoration: underline; }
 
-a:hover {
-  color: var(--accent-dark);
-}
+/* Lists — remove default bullets (we style them ourselves) */
+ul, ol { list-style: none; }
 
-/* ── TYPOGRAPHY ─────────────────────────────────────────── */
-h1 { font-size: 2rem;   font-weight: 700; letter-spacing: -0.02em; }
-h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
-h3 { font-size: 1.1rem; font-weight: 600; }
-h4 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase;
-     letter-spacing: 0.08em; color: var(--text-muted); }
+/* Make images responsive by default */
+img { max-width: 100%; height: auto; display: block; }
 
-/* ── LAYOUT ─────────────────────────────────────────────── */
-
-/* Full-page centered container — used on login/register */
-.page-center {
-  min-height: 100vh;
-  display: flex;
+/* ── BUTTONS ──────────────────────────────────────────────── */
+/* Base button style — shared by all button variants */
+.btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  gap: var(--space-sm);
+  padding: 12px 24px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition), transform var(--transition), opacity var(--transition);
+  text-transform: none;
 }
 
-/* Dashboard shell — sidebar + main content */
-.app-shell {
-  display: flex;
-  min-height: 100vh;
+.btn:hover  { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+/* Primary — filled accent button (main calls to action) */
+.btn-primary {
+  background-color: var(--accent);
+  color: #0d0d0d; /* Dark text on bright background for contrast */
+}
+.btn-primary:hover { background-color: var(--accent-dark); }
+
+/* Secondary — darker, less prominent action */
+.btn-secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.btn-secondary:hover { background-color: var(--bg-elevated); }
+
+/* Outline — transparent with border */
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-/* ── SIDEBAR ────────────────────────────────────────────── */
-.sidebar {
-  width: 240px;
-  min-height: 100vh;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border);
+/* Size variants */
+.btn-full { width: 100%; }
+.btn-sm   { padding: 8px 16px; font-size: 0.85rem; }
+
+/* Disabled state */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── FORM ELEMENTS ────────────────────────────────────────── */
+/* Shared styles for all form groups (label + input pairs) */
+.form-group {
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
-  position: fixed;   /* stays in place while content scrolls */
-  top: 0;
-  left: 0;
-  bottom: 0;
-}
-
-.sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px 24px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-}
-
-.sidebar-logo .logo-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--accent);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.sidebar-logo .logo-text {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-/* Navigation links in the sidebar */
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-}
-
-.nav-link:hover {
-  background: var(--bg-raised);
-  color: var(--text);
-}
-
-/* The currently active tab gets the accent color */
-.nav-link.active {
-  background: rgba(0, 229, 160, 0.12);
-  color: var(--accent);
-}
-
-.nav-link .nav-icon { font-size: 1.1rem; width: 20px; }
-
-.nav-spacer { flex: 1; } /* pushes logout to the bottom */
-
-/* ── MAIN CONTENT ───────────────────────────────────────── */
-.main-content {
-  margin-left: 240px;  /* same as sidebar width */
+  gap: var(--space-xs);
   flex: 1;
-  padding: 32px;
-  max-width: 900px;
 }
 
-/* Each section of the dashboard (exercise, diet, etc.) */
-.section {
-  display: none;  /* hidden by default — app.js shows the active one */
-}
-
-.section.active {
-  display: block;
-}
-
-/* ── CARDS ───────────────────────────────────────────────── */
-.card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 16px;
-}
-
-/* A row of stats cards side by side */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--accent);
-  line-height: 1;
-  margin-bottom: 6px;
-}
-
-.stat-value.orange { color: var(--accent-orange); }
-.stat-value.yellow { color: var(--accent-yellow); }
-.stat-value.purple { color: var(--accent-purple); }
-
-.stat-label {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+/* Labels above inputs */
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.05em;
 }
 
-/* ── FORMS ───────────────────────────────────────────────── */
-.form-group {
-  margin-bottom: 16px;
-}
-
-label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 500;
+/* Hint text inside labels (e.g. "(optional)", "(min. 6 chars)") */
+.hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 7px;
 }
 
-input, select, textarea {
+/* Inputs, selects, and textareas — consistent styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
   width: 100%;
-  background: var(--bg-raised);
+  padding: 12px var(--space-md);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: 0.95rem;
-  font-family: inherit;
-  padding: 12px 14px;
-  transition: border-color var(--transition);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  appearance: none; /* Remove native browser styling on selects */
+}
+
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
-}
-
-input:focus, select:focus, textarea:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
-/* select arrow — the default browser one looks bad on dark */
+/* Placeholder text colour */
+input::placeholder,
+textarea::placeholder { color: var(--text-muted); }
+
+/* Select arrow icon (custom since we removed native styling) */
 select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238080A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a0a0a0' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px;
 }
 
-/* Red border when a field has an error */
-input.error, select.error {
-  border-color: var(--accent-red);
-}
-
-.field-error {
-  font-size: 0.8rem;
-  color: var(--accent-red);
-  margin-top: 5px;
-}
-
-/* Two form inputs side by side */
+/* Row layout for side-by-side form fields */
 .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* ── BUTTONS ─────────────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 22px;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-family: inherit;
-  border: none;
-  cursor: pointer;
-  transition: opacity var(--transition), transform var(--transition);
-}
-
-.btn:hover { opacity: 0.88; }
-.btn:active { transform: scale(0.97); }
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Primary — mint green, used for main actions */
-.btn-primary {
-  background: var(--accent);
-  color: #08080F;  /* dark text on light background */
-}
-
-/* Secondary — subtle outline */
-.btn-secondary {
-  background: var(--bg-raised);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-.btn-danger {
-  background: rgba(255, 71, 87, 0.15);
-  color: var(--accent-red);
-  border: 1px solid rgba(255, 71, 87, 0.25);
-}
-
-/* Full width — used in forms */
-.btn-full { width: 100%; }
-
-/* ── ALERT / FEEDBACK MESSAGES ───────────────────────────── */
-.alert {
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 0.875rem;
-  margin-bottom: 16px;
-}
-
-.alert-success {
-  background: rgba(0, 229, 160, 0.1);
-  border: 1px solid rgba(0, 229, 160, 0.25);
-  color: var(--accent);
-}
-
-.alert-error {
-  background: rgba(255, 71, 87, 0.1);
-  border: 1px solid rgba(255, 71, 87, 0.25);
-  color: var(--accent-red);
-}
-
-.alert-warning {
-  background: rgba(255, 181, 71, 0.1);
-  border: 1px solid rgba(255, 181, 71, 0.25);
-  color: var(--accent-yellow);
-}
-
-/* Hidden by default — JS removes the class to show them */
-.hidden { display: none !important; }
-
-/* ── EXERCISE / DIET LOG LIST ─────────────────────────────── */
-.log-list {
-  list-style: none;
-  margin-top: 12px;
-}
-
-.log-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  margin-bottom: 8px;
-  background: var(--bg-raised);
-  transition: border-color var(--transition);
+  gap: var(--space-md);
 }
 
-.log-item:hover {
-  border-color: var(--border-hover);
-}
-
-.log-item-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-/* Coloured dot indicating exercise type */
-.log-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent-orange);
-  flex-shrink: 0;
-}
-
-.log-dot.diet   { background: var(--accent-yellow); }
-.log-dot.goal   { background: var(--accent-purple); }
-
-.log-name {
-  font-weight: 600;
-  font-size: 0.92rem;
-}
-
-.log-meta {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.log-calories {
-  font-weight: 700;
-  color: var(--accent-orange);
-  font-size: 0.9rem;
-}
-
-.log-delete {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 4px 8px;
-  border-radius: var(--radius-xs);
-  transition: color var(--transition), background var(--transition);
-}
-
-.log-delete:hover {
-  color: var(--accent-red);
-  background: rgba(255, 71, 87, 0.1);
-}
-
-/* ── PROGRESS BAR ────────────────────────────────────────── */
-.progress-bar-wrap {
-  background: var(--bg-raised);
-  border-radius: 99px;
-  height: 8px;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: var(--accent);
-  transition: width 0.5s ease;
-}
-
-.progress-bar-fill.orange { background: var(--accent-orange); }
-.progress-bar-fill.yellow { background: var(--accent-yellow); }
-.progress-bar-fill.red    { background: var(--accent-red); }
-
-/* ── AUTH PAGE (login/register) ──────────────────────────── */
-.auth-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 40px;
-  width: 100%;
-  max-width: 420px;
-}
-
-.auth-logo {
-  text-align: center;
-  margin-bottom: 28px;
-}
-
-.auth-logo .logo-icon-lg {
-  width: 52px;
-  height: 52px;
-  background: var(--accent);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  margin: 0 auto 12px;
-}
-
-.auth-tabs {
-  display: flex;
-  background: var(--bg-raised);
-  border-radius: var(--radius-sm);
-  padding: 4px;
-  margin-bottom: 24px;
-}
-
-.auth-tab {
-  flex: 1;
-  padding: 9px;
-  border: none;
-  border-radius: 7px;
-  background: none;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
-}
-
-.auth-tab.active {
-  background: var(--bg-overlay);
-  color: var(--text);
-}
-
-/* ── GOAL PROGRESS CARD ──────────────────────────────────── */
-.goal-item {
-  padding: 18px;
+/* Fieldset (used for grouping physical stats on registration) */
+.stats-fieldset {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  margin-bottom: 10px;
-  background: var(--bg-raised);
+  padding: var(--space-md);
+  margin-top: var(--space-sm);
 }
-
-.goal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.goal-title {
+.stats-fieldset legend {
+  padding: 0 var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.92rem;
-}
-
-.goal-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: 99px;
 }
 
-.goal-badge.met {
-  background: rgba(0, 229, 160, 0.15);
-  color: var(--accent);
+/* Form feedback messages (success/error) */
+.form-message {
+  font-size: 0.9rem;
+  min-height: 1.4em;
+  padding: var(--space-xs) 0;
 }
+.form-message.success { color: var(--success); }
+.form-message.error   { color: var(--error); }
 
-.goal-badge.active {
-  background: rgba(124, 111, 255, 0.15);
-  color: var(--accent-purple);
-}
-
-.goal-badge.overdue {
-  background: rgba(255, 71, 87, 0.15);
-  color: var(--accent-red);
-}
-
-/* ── CALORIE RING (apple-fitness-style) ──────────────────── */
-.calorie-ring-wrap {
+/* ── AUTH PAGE (Login / Register) ─────────────────────────── */
+.auth-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 12px 0;
+  min-height: 100vh;
+  padding: var(--space-lg);
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(200,255,0,0.04) 0%, transparent 60%),
+    var(--bg-primary);
 }
 
-.calorie-ring {
-  position: relative;
-  width: 120px;
-  height: 120px;
+/* The card that wraps the login/register form */
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
 }
 
-.calorie-ring svg { transform: rotate(-90deg); }
-
-.calorie-ring-text {
-  position: absolute;
-  inset: 0;
+/* App logo and title area */
+.auth-header {
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--space-sm);
+}
+
+/* The "HT" logo badge */
+.logo-mark {
+  width: 56px;
+  height: 56px;
+  background-color: var(--accent);
+  color: #0d0d0d;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
   justify-content: center;
-  text-align: center;
+  font-weight: 900;
+  font-size: 1.2rem;
+  letter-spacing: -0.04em;
 }
 
-.calorie-ring-number {
+.brand-name {
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+}
+
+.brand-tagline {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Tab buttons (Login / Sign Up) */
+.auth-tabs {
+  display: flex;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  gap: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.tab-btn.active {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* The login/register forms */
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.panel-heading {
   font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--accent-yellow);
-  line-height: 1;
+  margin-bottom: var(--space-xs);
 }
 
-.calorie-ring-sub {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 3px;
-}
-
-/* ── SECTION HEADER ──────────────────────────────────────── */
-.section-header {
+/* ── DASHBOARD HEADER ─────────────────────────────────────── */
+.app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  padding: 0 var(--space-xl);
+  height: 64px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100; /* Stay above scrolling content */
 }
 
-/* ── RESPONSIVE — stack on smaller screens ───────────────── */
+/* App name in the header */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.logo-mark-sm {
+  width: 32px;
+  height: 32px;
+  background-color: var(--accent);
+  color: #0d0d0d;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.8rem;
+}
+
+.header-app-name {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+/* Navigation links in the header */
+.header-nav {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.nav-btn:hover,
+.nav-btn.active {
+  background-color: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* User greeting and logout area */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.user-greeting {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ── DASHBOARD MAIN CONTENT ───────────────────────────────── */
+.dashboard-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-xl);
+}
+
+/* Individual sections (overview, exercise, diet, etc.) */
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Section headings */
+.section-heading {
+  font-size: 1.8rem;
+  letter-spacing: -0.03em;
+}
+
+/* Cards that wrap content within sections */
+.dashboard-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Heading inside a card */
+.card-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+/* ── STAT CARDS ───────────────────────────────────────────── */
+/* The grid of 4 summary numbers at the top of overview */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+}
+
+.stat-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* Accent card has a coloured left border for visual emphasis */
+.stat-card.accent {
+  border-left: 3px solid var(--accent);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-value {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.stat-unit {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ── ACTIVITY LISTS ───────────────────────────────────────── */
+/* Lists of logged activities (exercise, meals, goals) */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Each item in an activity list */
+.activity-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  gap: var(--space-md);
+}
+
+/* Tag showing the activity type */
+.activity-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent-glow);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Activity detail text */
+.activity-detail {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Empty state message */
+.empty-state {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+/* ── CATEGORY TOGGLE (Cardio / Strength) ─────────────────── */
+.category-toggle {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.toggle-btn {
+  padding: 10px 24px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.toggle-btn.active {
+  background-color: var(--accent);
+  color: #0d0d0d;
+  border-color: var(--accent);
+}
+
+/* ── CONDITIONAL FORM FIELDS ──────────────────────────────── */
+/* Used to show/hide cardio vs strength fields */
+.conditional-fields {
+  display: block;
+}
+.conditional-fields[hidden] {
+  display: none;
+}
+
+/* ── CALORIE GOAL FEEDBACK ────────────────────────────────── */
+/* The banner shown after logging a meal (Miro Wireframe 2) */
+.goal-feedback {
+  display: block;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 500;
+  min-height: 1.6em;
+}
+.goal-feedback.under  {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: var(--success);
+}
+.goal-feedback.over   {
+  background-color: rgba(244, 67, 54, 0.15);
+  color: var(--error);
+}
+
+/* ── GOALS LIST ───────────────────────────────────────────── */
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Each goal card */
+.goal-item {
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.goal-item.met {
+  border-left: 3px solid var(--success);
+  opacity: 0.7;
+}
+
+.goal-item.overdue {
+  border-left: 3px solid var(--error);
+}
+
+/* Progress bar inside goal items */
+.progress-bar {
+  height: 6px;
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width 0.5s ease;
+}
+
+/* ── GROUPS ───────────────────────────────────────────────── */
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Invite code box shown after creating a group */
+.invite-code-box {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--space-md);
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.invite-code-box strong {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  display: block;
+  margin-top: var(--space-xs);
+}
+
+/* Daily calorie total in diet section */
+.calorie-total {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.calorie-total strong {
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+/* Stats note (loading message) */
+.stats-note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ── RESPONSIVE DESIGN ────────────────────────────────────── */
+/* On smaller screens, stack things vertically */
 @media (max-width: 768px) {
-  .sidebar {
+  .app-header {
+    padding: 0 var(--space-md);
+    flex-wrap: wrap;
+    height: auto;
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    gap: var(--space-sm);
+  }
+
+  .header-nav {
+    order: 3; /* Move nav below brand and user on mobile */
     width: 100%;
-    min-height: auto;
-    position: static;
-    flex-direction: row;
-    padding: 12px 16px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
     overflow-x: auto;
+    padding-bottom: var(--space-sm);
   }
 
-  .main-content {
-    margin-left: 0;
-    padding: 20px 16px;
+  .dashboard-main {
+    padding: var(--space-md);
   }
 
-  .sidebar-logo { display: none; }
-  .nav-spacer { display: none; }
-  .nav-link { padding: 8px 12px; white-space: nowrap; }
-  .form-row { grid-template-columns: 1fr; }
-  .app-shell { flex-direction: column; }
+  .form-row {
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .auth-container {
+    padding: var(--space-lg) var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }

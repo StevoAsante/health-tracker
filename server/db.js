@@ -1,52 +1,53 @@
 // ============================================================
-// db.js — Database Connection
+// db.js — Database Connection Pool
 // ============================================================
-// This file creates ONE connection to your PostgreSQL database
-// and makes it available to every other file that needs it.
+// This file creates a single shared connection to PostgreSQL
+// and exports it so every other file can use it.
 //
-// Think of this like plugging in a phone charger once —
-// every room (file) in the house can now use that power source
-// by importing this file.
+// WHY A POOL?
+// Opening and closing a fresh database connection for every
+// request would be slow. A "pool" keeps a handful of connections
+// open and ready to use — like keeping a few checkout lanes
+// open at a supermarket rather than opening a new one for
+// each customer and closing it after.
+//
+// HOW OTHER FILES USE THIS:
+//   const db = require('./db');
+//   const result = await db.query('SELECT * FROM users');
 // ============================================================
 
-// 'pg' is the PostgreSQL library for Node.js.
-// We pull out just the 'Pool' class from it.
-// A Pool manages multiple database connections efficiently —
-// instead of opening and closing a new connection for every
-// request, it keeps a small group (pool) of connections ready.
+// dotenv loads the values from your .env file into process.env
+// so we can read DB_HOST, DB_PASSWORD, etc.
+require('dotenv').config();
+
+// Pull the Pool class out of the 'pg' (PostgreSQL) library.
 const { Pool } = require('pg');
 
-// Create a new connection pool.
-// These settings tell pg HOW to connect to your PostgreSQL database.
-// ⚠️ Replace the values below with your actual UEA pgAdmin credentials.
+// Create the pool using values from .env
+// Each team member's .env has their own credentials,
+// so nobody needs to hardcode passwords in shared code.
 const pool = new Pool({
-  host: 'localhost',        // Where the database is running (your own machine)
-  port: 5432,               // The default PostgreSQL port number
-  database: 'health_tracker', // The name of the database you created in pgAdmin
-  user: 'postgres',         // Your pgAdmin username (usually 'postgres' by default)
-  password: 'your_password_here', // Your pgAdmin password — change this!
-  max: 10,                  // Maximum number of simultaneous connections in the pool
-  idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-  connectionTimeoutMillis: 2000, // Fail if a connection takes longer than 2 seconds
+  host:     process.env.DB_HOST     || 'localhost',
+  port:     parseInt(process.env.DB_PORT) || 5432,
+  database: process.env.DB_NAME     || 'health_tracker',
+  user:     process.env.DB_USER     || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-// Test that the connection works when the server starts.
-// pool.connect() tries to grab a connection from the pool.
-// If it works, we release it immediately (we were just checking).
-// If it fails, we log the error so you know what went wrong.
+// Test the connection when the server starts.
+// We borrow one connection, log whether it worked, then give it back.
 pool.connect((error, client, release) => {
   if (error) {
-    // This will print in your terminal if the DB connection fails.
-    // Common causes: wrong password, database doesn't exist, pgAdmin not running.
-    console.error('❌ Failed to connect to the database:', error.message);
+    console.error('❌ Database connection failed:', error.message);
+    console.error('   → Check your .env file and make sure pgAdmin is running.');
   } else {
-    // This will print when your server starts and the DB is reachable.
-    console.log('✅ Connected to PostgreSQL database successfully!');
-    release(); // Return the test connection back to the pool
+    console.log('✅ Connected to PostgreSQL successfully!');
+    release(); // Return the test connection to the pool
   }
 });
 
-// Export the pool so other files can use it.
-// Any file that does:  const db = require('./db');
-// ...can then call:    db.query('SELECT * FROM users')
+// Export the pool so any other file can import it and run queries.
 module.exports = pool;

@@ -1,0 +1,632 @@
+/* ============================================================
+   style.css — Health Tracker Design System
+   Inspired by: Strava, Apple Fitness, Ryse
+   Dark, athletic, minimal. No gradients for decoration.
+   ============================================================ */
+
+/* ── RESET ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── DESIGN TOKENS ─────────────────────────────────────── */
+/* Change a color here, it updates everywhere. */
+:root {
+  /* Backgrounds — layered dark surfaces */
+  --bg-base:    #08080F;   /* page background — near black */
+  --bg-surface: #0F0F1C;   /* cards and panels */
+  --bg-raised:  #17172A;   /* inputs, hover states */
+  --bg-overlay: #1E1E35;   /* dropdowns, modals */
+
+  /* Accent colors — each maps to a feature area */
+  --accent:        #00E5A0; /* mint green — primary brand, goals */
+  --accent-dark:   #00B87E; /* darker mint for hover states */
+  --accent-orange: #FF6B35; /* exercise / calories burned */
+  --accent-yellow: #FFB547; /* food / diet */
+  --accent-purple: #7C6FFF; /* goals / streaks */
+  --accent-red:    #FF4757; /* warnings, over-limit */
+
+  /* Text */
+  --text:       #FFFFFF;
+  --text-muted: #8080A0;
+  --text-dim:   #444460;
+
+  /* Borders */
+  --border:       rgba(255,255,255,0.07);
+  --border-hover: rgba(255,255,255,0.14);
+
+  /* Spacing */
+  --radius:    16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+
+  /* Transitions */
+  --transition: 0.18s ease;
+}
+
+/* ── BASE ───────────────────────────────────────────────── */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text);
+  /* Use the system UI font stack — clean and fast, no extra download */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+               'Inter', 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-dark);
+}
+
+/* ── TYPOGRAPHY ─────────────────────────────────────────── */
+h1 { font-size: 2rem;   font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.1rem; font-weight: 600; }
+h4 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase;
+     letter-spacing: 0.08em; color: var(--text-muted); }
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+
+/* Full-page centered container — used on login/register */
+.page-center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Dashboard shell — sidebar + main content */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ────────────────────────────────────────────── */
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  position: fixed;   /* stays in place while content scrolls */
+  top: 0;
+  left: 0;
+  bottom: 0;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.sidebar-logo .logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.sidebar-logo .logo-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Navigation links in the sidebar */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-link:hover {
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+/* The currently active tab gets the accent color */
+.nav-link.active {
+  background: rgba(0, 229, 160, 0.12);
+  color: var(--accent);
+}
+
+.nav-link .nav-icon { font-size: 1.1rem; width: 20px; }
+
+.nav-spacer { flex: 1; } /* pushes logout to the bottom */
+
+/* ── MAIN CONTENT ───────────────────────────────────────── */
+.main-content {
+  margin-left: 240px;  /* same as sidebar width */
+  flex: 1;
+  padding: 32px;
+  max-width: 900px;
+}
+
+/* Each section of the dashboard (exercise, diet, etc.) */
+.section {
+  display: none;  /* hidden by default — app.js shows the active one */
+}
+
+.section.active {
+  display: block;
+}
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+/* A row of stats cards side by side */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-value.orange { color: var(--accent-orange); }
+.stat-value.yellow { color: var(--accent-yellow); }
+.stat-value.purple { color: var(--accent-purple); }
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+/* ── FORMS ───────────────────────────────────────────────── */
+.form-group {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 7px;
+}
+
+input, select, textarea {
+  width: 100%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  padding: 12px 14px;
+  transition: border-color var(--transition);
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+/* select arrow — the default browser one looks bad on dark */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238080A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+/* Red border when a field has an error */
+input.error, select.error {
+  border-color: var(--accent-red);
+}
+
+.field-error {
+  font-size: 0.8rem;
+  color: var(--accent-red);
+  margin-top: 5px;
+}
+
+/* Two form inputs side by side */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Primary — mint green, used for main actions */
+.btn-primary {
+  background: var(--accent);
+  color: #08080F;  /* dark text on light background */
+}
+
+/* Secondary — subtle outline */
+.btn-secondary {
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-danger {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+}
+
+/* Full width — used in forms */
+.btn-full { width: 100%; }
+
+/* ── ALERT / FEEDBACK MESSAGES ───────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+.alert-success {
+  background: rgba(0, 229, 160, 0.1);
+  border: 1px solid rgba(0, 229, 160, 0.25);
+  color: var(--accent);
+}
+
+.alert-error {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  color: var(--accent-red);
+}
+
+.alert-warning {
+  background: rgba(255, 181, 71, 0.1);
+  border: 1px solid rgba(255, 181, 71, 0.25);
+  color: var(--accent-yellow);
+}
+
+/* Hidden by default — JS removes the class to show them */
+.hidden { display: none !important; }
+
+/* ── EXERCISE / DIET LOG LIST ─────────────────────────────── */
+.log-list {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.log-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  background: var(--bg-raised);
+  transition: border-color var(--transition);
+}
+
+.log-item:hover {
+  border-color: var(--border-hover);
+}
+
+.log-item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Coloured dot indicating exercise type */
+.log-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-orange);
+  flex-shrink: 0;
+}
+
+.log-dot.diet   { background: var(--accent-yellow); }
+.log-dot.goal   { background: var(--accent-purple); }
+
+.log-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.log-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.log-calories {
+  font-weight: 700;
+  color: var(--accent-orange);
+  font-size: 0.9rem;
+}
+
+.log-delete {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  transition: color var(--transition), background var(--transition);
+}
+
+.log-delete:hover {
+  color: var(--accent-red);
+  background: rgba(255, 71, 87, 0.1);
+}
+
+/* ── PROGRESS BAR ────────────────────────────────────────── */
+.progress-bar-wrap {
+  background: var(--bg-raised);
+  border-radius: 99px;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.5s ease;
+}
+
+.progress-bar-fill.orange { background: var(--accent-orange); }
+.progress-bar-fill.yellow { background: var(--accent-yellow); }
+.progress-bar-fill.red    { background: var(--accent-red); }
+
+/* ── AUTH PAGE (login/register) ──────────────────────────── */
+.auth-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-logo .logo-icon-lg {
+  width: 52px;
+  height: 52px;
+  background: var(--accent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 12px;
+}
+
+.auth-tabs {
+  display: flex;
+  background: var(--bg-raised);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.auth-tab.active {
+  background: var(--bg-overlay);
+  color: var(--text);
+}
+
+/* ── GOAL PROGRESS CARD ──────────────────────────────────── */
+.goal-item {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  background: var(--bg-raised);
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.goal-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.goal-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 99px;
+}
+
+.goal-badge.met {
+  background: rgba(0, 229, 160, 0.15);
+  color: var(--accent);
+}
+
+.goal-badge.active {
+  background: rgba(124, 111, 255, 0.15);
+  color: var(--accent-purple);
+}
+
+.goal-badge.overdue {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--accent-red);
+}
+
+/* ── CALORIE RING (apple-fitness-style) ──────────────────── */
+.calorie-ring-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.calorie-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.calorie-ring svg { transform: rotate(-90deg); }
+
+.calorie-ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.calorie-ring-number {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-yellow);
+  line-height: 1;
+}
+
+.calorie-ring-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+}
+
+/* ── SECTION HEADER ──────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* ── RESPONSIVE — stack on smaller screens ───────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    position: static;
+    flex-direction: row;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 20px 16px;
+  }
+
+  .sidebar-logo { display: none; }
+  .nav-spacer { display: none; }
+  .nav-link { padding: 8px 12px; white-space: nowrap; }
+  .form-row { grid-template-columns: 1fr; }
+  .app-shell { flex-direction: column; }
+}
