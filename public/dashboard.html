@@ -34,7 +34,6 @@
       <button class="nav-btn"        data-section="diet">Diet</button>
       <button class="nav-btn"        data-section="goals">Goals</button>
       <button class="nav-btn"        data-section="stats">Stats</button>
-      <button class="nav-btn"        data-section="groups">Groups</button>
     </nav>
 
     <!-- User menu -->
@@ -113,6 +112,9 @@
         </div>
 
         <form id="exercise-form" novalidate>
+          <!-- Hidden field to store selected exercise ID from library -->
+          <input type="hidden" id="exercise-id" name="exercise_id" />
+
           <div class="form-row">
             <div class="form-group">
               <label for="ex-type">Activity type</label>
@@ -341,6 +343,29 @@
                 <input type="number" id="custom-food-calories" name="calories" min="0" placeholder="300" required />
               </div>
             </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="custom-food-protein">Protein (g)</label>
+                <input type="number" id="custom-food-protein" name="protein_g" min="0" step="0.1" placeholder="25.0" />
+              </div>
+              <div class="form-group">
+                <label for="custom-food-carbs">Carbs (g)</label>
+                <input type="number" id="custom-food-carbs" name="carbs_g" min="0" step="0.1" placeholder="30.0" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="custom-food-fat">Fat (g)</label>
+                <input type="number" id="custom-food-fat" name="fat_g" min="0" step="0.1" placeholder="10.0" />
+              </div>
+              <div class="form-group">
+                <label for="custom-food-fibre">Fibre (g)</label>
+                <input type="number" id="custom-food-fibre" name="fibre_g" min="0" step="0.1" placeholder="2.0" />
+              </div>
+            </div>
+
             <p class="form-message" id="custom-food-message" aria-live="polite"></p>
             <button type="submit" class="btn btn-secondary">Add to My Foods</button>
           </form>
@@ -566,16 +591,27 @@
     <section id="section-routines" class="dash-section" aria-label="Workout Routines" hidden>
       <h2 class="section-heading">Workout Routines</h2>
 
+      <!-- Private/Custom Routines Section -->
       <div class="dashboard-card">
+        <h3 class="card-heading">My Routines</h3>
+        <p class="section-description">Create and manage your own custom workout routines.</p>
+
         <div class="routine-controls">
           <button class="btn btn-primary" id="create-routine-btn">Create New Routine</button>
-          <div class="routine-filters">
-            <label><input type="checkbox" id="show-public-routines" /> Show public routines</label>
-          </div>
         </div>
 
-        <div id="routines-list" class="routines-list">
-          <div class="empty-state">No routines yet. Create your first workout routine!</div>
+        <div id="private-routines-list" class="routines-list">
+          <div class="empty-state">No custom routines yet. Create your first workout routine!</div>
+        </div>
+      </div>
+
+      <!-- Public Routines Section -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Public Routines</h3>
+        <p class="section-description">Browse pre-built workout routines created by the community. Perfect for getting started or trying new programs.</p>
+
+        <div id="public-routines-list" class="routines-list">
+          <div class="empty-state">Loading public routines...</div>
         </div>
       </div>
     </section>
@@ -614,20 +650,98 @@
 
     <!-- ── SOCIAL FEED SECTION ──────────────────────────── -->
     <section id="section-social" class="dash-section" aria-label="Social Feed" hidden>
-      <h2 class="section-heading">Social Feed</h2>
+      <h2 class="section-heading">Social</h2>
 
-      <div class="dashboard-card">
-        <div class="social-controls">
-          <button class="btn btn-primary" id="create-post-btn">Share Workout</button>
-          <div class="feed-filters">
-            <button class="feed-filter active" data-filter="all">All Posts</button>
-            <button class="feed-filter" data-filter="following">Following</button>
-            <button class="feed-filter" data-filter="mine">My Posts</button>
+      <!-- Social tabs -->
+      <nav class="social-tabs" role="tablist" aria-label="Social options">
+        <button
+          class="social-tab-btn active"
+          id="tab-social-feed"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-social-feed"
+          data-tab="social-feed"
+        >
+          Feed
+        </button>
+        <button
+          class="social-tab-btn"
+          id="tab-communities"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-communities"
+          data-tab="communities"
+        >
+          Communities
+        </button>
+      </nav>
+
+      <!-- Social Feed Panel -->
+      <div
+        id="panel-social-feed"
+        class="social-panel active"
+        role="tabpanel"
+        aria-labelledby="tab-social-feed"
+      >
+        <div class="dashboard-card">
+          <div class="social-controls">
+            <button class="btn btn-primary" id="create-post-btn">Share Workout</button>
+            <div class="feed-filters">
+              <button class="feed-filter active" data-filter="all">All Posts</button>
+              <button class="feed-filter" data-filter="following">Following</button>
+              <button class="feed-filter" data-filter="mine">My Posts</button>
+            </div>
+          </div>
+
+          <div id="social-feed" class="social-feed">
+            <div class="empty-state">Loading social feed...</div>
           </div>
         </div>
+      </div>
 
-        <div id="social-feed" class="social-feed">
-          <div class="empty-state">No posts yet. Be the first to share your workout!</div>
+      <!-- Communities Panel -->
+      <div
+        id="panel-communities"
+        class="social-panel"
+        role="tabpanel"
+        aria-labelledby="tab-communities"
+        style="display: none;"
+      >
+        <div class="dashboard-card">
+          <h3 class="card-heading">Communities</h3>
+          <p class="section-description">Join fitness communities to connect with like-minded people and share your progress.</p>
+
+          <div class="community-controls">
+            <button class="btn btn-primary" id="create-community-btn">Create Community</button>
+            <button class="btn btn-secondary" id="join-community-btn">Join Community</button>
+          </div>
+
+          <!-- Create Community Form -->
+          <form id="create-community-form" class="form-card" style="display: none;">
+            <h4>Create New Community</h4>
+            <div class="form-group">
+              <label for="community-name">Community Name</label>
+              <input type="text" id="community-name" name="name" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Community</button>
+            <div id="create-community-message" class="message" hidden></div>
+            <div id="community-invite-code-display" class="invite-code" hidden></div>
+          </form>
+
+          <!-- Join Community Form -->
+          <form id="join-community-form" class="form-card" style="display: none;">
+            <h4>Join Community</h4>
+            <div class="form-group">
+              <label for="community-invite-code">Invite Code</label>
+              <input type="text" id="community-invite-code" name="invite_code" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Join Community</button>
+            <div id="join-community-message" class="message" hidden></div>
+          </form>
+
+          <div id="communities-list" class="communities-list">
+            <div class="empty-state">Loading communities...</div>
+          </div>
         </div>
       </div>
     </section>
