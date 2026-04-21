@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDietTabs();
   setupGoalsForm();
   setupGroupForms();
+  setupRoutinesForm();
 
   // ── STEP 5: LOGOUT BUTTON ───────────────────────────────
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -1340,6 +1341,245 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Leave group error:', error.message);
     }
   };
+
+
+  // ============================================================
+  // SECTION: Routines
+  // ============================================================
+
+  /**
+   * setupRoutinesForm — wires up the create routine button and modal.
+   */
+  function setupRoutinesForm() {
+    const createBtn = document.getElementById('create-routine-btn');
+    const modal = document.getElementById('create-routine-modal');
+    const form = document.getElementById('create-routine-form');
+    const closeBtn = document.getElementById('create-routine-close');
+    const addExerciseBtn = document.getElementById('add-exercise-btn');
+    const exercisesList = document.getElementById('routine-exercises');
+    const msgEl = document.getElementById('create-routine-message');
+
+    let routineExercises = [];
+
+    // Open modal
+    createBtn.addEventListener('click', () => {
+      routineExercises = [];
+      exercisesList.innerHTML = '<div class="empty-state">No exercises added yet. Add your first exercise below.</div>';
+      form.reset();
+      modal.showModal();
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+      modal.close();
+    });
+
+    // Add exercise
+    addExerciseBtn.addEventListener('click', () => {
+      addExerciseToRoutine();
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+      const routineData = {
+        name: formData.get('name').trim(),
+        description: formData.get('description').trim(),
+        difficulty: formData.get('difficulty'),
+        estimated_time: formData.get('estimated_time') ? parseInt(formData.get('estimated_time')) : null,
+        is_public: formData.has('is_public'),
+        exercises: routineExercises
+      };
+
+      if (!routineData.name) {
+        showMessage(msgEl, 'Please enter a routine name.', 'error');
+        return;
+      }
+
+      if (routineExercises.length === 0) {
+        showMessage(msgEl, 'Please add at least one exercise to the routine.', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/routines/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(routineData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage(msgEl, data.message, 'success');
+          modal.close();
+          loadWorkoutRoutines();
+        } else {
+          showMessage(msgEl, data.error || 'Failed to create routine.', 'error');
+        }
+
+      } catch (error) {
+        console.error('Create routine error:', error.message);
+        showMessage(msgEl, 'Network error. Please try again.', 'error');
+      }
+    });
+
+    function addExerciseToRoutine() {
+      // Create a simple exercise addition form
+      const exerciseForm = document.createElement('div');
+      exerciseForm.className = 'exercise-form-item';
+      exerciseForm.innerHTML = `
+        <div class="form-row">
+          <div class="form-group">
+            <label>Exercise</label>
+            <select class="exercise-select" required>
+              <option value="">Select exercise...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Sets</label>
+            <input type="number" class="sets-input" min="1" max="10" value="3" required>
+          </div>
+          <div class="form-group">
+            <label>Reps</label>
+            <input type="text" class="reps-input" placeholder="10" required>
+          </div>
+          <div class="form-group">
+            <label>Rest (sec)</label>
+            <input type="number" class="rest-input" min="0" value="90">
+          </div>
+          <button type="button" class="btn btn-sm btn-danger remove-exercise-btn">Remove</button>
+        </div>
+      `;
+
+      if (exercisesList.querySelector('.empty-state')) {
+        exercisesList.innerHTML = '';
+      }
+
+      exercisesList.appendChild(exerciseForm);
+
+      // Populate exercise dropdown
+      const select = exerciseForm.querySelector('.exercise-select');
+      loadExerciseLibraryForSelect(select);
+
+      // Remove button
+      exerciseForm.querySelector('.remove-exercise-btn').addEventListener('click', () => {
+        exerciseForm.remove();
+        updateRoutineExercises();
+        if (exercisesList.children.length === 0) {
+          exercisesList.innerHTML = '<div class="empty-state">No exercises added yet. Add your first exercise below.</div>';
+        }
+      });
+
+      // Update routine exercises when inputs change
+      exerciseForm.addEventListener('input', updateRoutineExercises);
+      exerciseForm.addEventListener('change', updateRoutineExercises);
+    }
+
+    function updateRoutineExercises() {
+      routineExercises = Array.from(exercisesList.querySelectorAll('.exercise-form-item')).map((item, index) => {
+        const select = item.querySelector('.exercise-select');
+        const sets = item.querySelector('.sets-input');
+        const reps = item.querySelector('.reps-input');
+        const rest = item.querySelector('.rest-input');
+
+        const selectedOption = select.options[select.selectedIndex];
+        const exerciseId = selectedOption ? parseInt(selectedOption.value) : null;
+        const exerciseName = selectedOption ? selectedOption.text : '';
+
+        return {
+          exercise_id: exerciseId,
+          custom_exercise: exerciseId ? null : exerciseName,
+          sets: parseInt(sets.value) || 3,
+          reps: reps.value || '10',
+          rest_seconds: parseInt(rest.value) || 90,
+          order_position: index + 1
+        };
+      });
+    }
+
+    async function loadExerciseLibraryForSelect(select) {
+      try {
+        const response = await fetch('/api/library/exercises');
+        const exercises = await response.json();
+
+        select.innerHTML = '<option value="">Select exercise...</option>' +
+          exercises.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join('');
+
+      } catch (error) {
+        console.error('Failed to load exercises for select:', error);
+      }
+    }
+  }
+
+  /**
+   * loadWorkoutRoutines — fetches workout routines and renders them.
+   * Separates private and public routines into different sections.
+   */
+  async function loadWorkoutRoutines() {
+    try {
+      const response = await fetch('/api/routines/list');
+      const routines = await response.json();
+
+      const privateContainer = document.getElementById('private-routines-list');
+      const publicContainer = document.getElementById('public-routines-list');
+
+      // Separate routines
+      const privateRoutines = routines.filter(r => !r.is_public);
+      const publicRoutines = routines.filter(r => r.is_public);
+
+      // Render private routines
+      if (privateRoutines.length === 0) {
+        privateContainer.innerHTML = '<div class="empty-state">No custom routines yet. Create your first workout routine!</div>';
+      } else {
+        privateContainer.innerHTML = privateRoutines.map(routine => `
+          <div class="routine-card">
+            <h4>${routine.name}</h4>
+            <p>${routine.description || 'No description'}</p>
+            <div class="routine-meta">
+              <span>Difficulty: ${routine.difficulty}</span>
+              <span>Exercises: ${routine.exercise_count || 0}</span>
+              ${routine.estimated_time ? `<span>Time: ${routine.estimated_time}min</span>` : ''}
+            </div>
+            <div class="routine-actions">
+              <button class="btn btn-sm" onclick="viewRoutine(${routine.id})">View</button>
+              <button class="btn btn-sm btn-secondary" onclick="startRoutine(${routine.id})">Start Workout</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Render public routines
+      if (publicRoutines.length === 0) {
+        publicContainer.innerHTML = '<div class="empty-state">No public routines available.</div>';
+      } else {
+        publicContainer.innerHTML = publicRoutines.map(routine => `
+          <div class="routine-card">
+            <h4>${routine.name}</h4>
+            <p>${routine.description || 'No description'}</p>
+            <div class="routine-meta">
+              <span>Difficulty: ${routine.difficulty}</span>
+              <span>Exercises: ${routine.exercise_count || 0}</span>
+              ${routine.estimated_time ? `<span>Time: ${routine.estimated_time}min</span>` : ''}
+            </div>
+            <div class="routine-actions">
+              <button class="btn btn-sm" onclick="viewRoutine(${routine.id})">View</button>
+              <button class="btn btn-sm btn-secondary" onclick="startRoutine(${routine.id})">Start Workout</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+    } catch (error) {
+      console.error('Failed to load routines:', error);
+      document.getElementById('private-routines-list').innerHTML =
+        '<div class="empty-state">Failed to load routines.</div>';
+      document.getElementById('public-routines-list').innerHTML =
+        '<div class="empty-state">Failed to load routines.</div>';
+    }
+  }
 
 
   // ============================================================

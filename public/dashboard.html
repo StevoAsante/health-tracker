@@ -868,6 +868,60 @@
       </form>
     </dialog>
 
+    <!-- ── CREATE ROUTINE MODAL ────────────────────────────── -->
+    <dialog id="create-routine-modal" class="modal-backdrop">
+      <form id="create-routine-form" class="modal-content" novalidate>
+        <h3 class="modal-title">Create New Workout Routine</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="routine-name">Routine Name *</label>
+            <input type="text" id="routine-name" name="name" required maxlength="100">
+          </div>
+          <div class="form-group">
+            <label for="routine-difficulty">Difficulty</label>
+            <select id="routine-difficulty" name="difficulty">
+              <option value="beginner">Beginner</option>
+              <option value="intermediate" selected>Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="routine-description">Description</label>
+          <textarea id="routine-description" name="description" rows="3" maxlength="500" placeholder="Describe your workout routine..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="routine-time">Estimated Time (minutes)</label>
+            <input type="number" id="routine-time" name="estimated_time" min="1" max="300">
+          </div>
+          <div class="form-group">
+            <label for="routine-public">
+              <input type="checkbox" id="routine-public" name="is_public"> Make this routine public
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Exercises</label>
+          <div id="routine-exercises" class="routine-exercises-list">
+            <div class="empty-state">No exercises added yet. Add your first exercise below.</div>
+          </div>
+          <button type="button" class="btn btn-sm" id="add-exercise-btn">+ Add Exercise</button>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Create Routine</button>
+          <button type="button" class="btn btn-secondary" id="create-routine-close">Cancel</button>
+        </div>
+
+        <p class="form-message" id="create-routine-message" aria-live="polite"></p>
+      </form>
+    </dialog>
+
   </main>
 
   <!--
