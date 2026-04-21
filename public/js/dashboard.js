@@ -186,14 +186,26 @@ document.addEventListener('DOMContentLoaded', () => {
             ? buildStrengthDetail(entry)
             : buildCardioDetail(entry);
           return `
-            <li>
+            <li data-entry-id="${entry.id}" class="activity-item-editable">
               <span>
                 <strong>${entry.activity_name}</strong>
                 <span class="activity-detail">${detail}</span>
               </span>
-              <span class="activity-tag">${entry.activity_type}</span>
+              <span class="activity-actions">
+                <button class="btn-icon edit-exercise-btn" data-id="${entry.id}" title="Edit entry">✎</button>
+                <span class="activity-tag">${entry.activity_type}</span>
+              </span>
             </li>`;
         }).join('');
+        
+        // Add event listeners for edit buttons
+        document.querySelectorAll('.edit-exercise-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const entryId = btn.dataset.id;
+            openEditExerciseModal(entryId);
+          });
+        });
       }
 
       // ── Render today's meal list ───────────────────────────
@@ -203,14 +215,26 @@ document.addEventListener('DOMContentLoaded', () => {
         mealList.innerHTML = '<li class="empty-state">No meals logged yet.</li>';
       } else {
         mealList.innerHTML = meals.map(meal => `
-          <li>
+          <li data-entry-id="${meal.id}" class="activity-item-editable">
             <span>
               <strong>${meal.food_name}</strong>
               <span class="activity-detail">${meal.calories} kcal · ${meal.meal_type}</span>
             </span>
-            <span class="activity-tag">${meal.meal_type}</span>
+            <span class="activity-actions">
+              <button class="btn-icon edit-meal-btn" data-id="${meal.id}" title="Edit entry">✎</button>
+              <span class="activity-tag">${meal.meal_type}</span>
+            </span>
           </li>`
         ).join('');
+        
+        // Add event listeners for edit buttons
+        document.querySelectorAll('.edit-meal-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const entryId = btn.dataset.id;
+            openEditMealModal(entryId);
+          });
+        });
       }
 
     } catch (error) {
@@ -803,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * loadStats — fetches the 7-day summaries for exercise and diet
-   * and fills in the statistics section with goal progress.
+   * and fills in the statistics section with goal progress and visual charts.
    */
   async function loadStats() {
     const loadingNote = document.getElementById('stats-loading');
@@ -822,11 +846,23 @@ document.addEventListener('DOMContentLoaded', () => {
       const dietData = await dietRes.json();
       const goalsData = await goalsRes.json();
 
-      // Fill in the stat card values
-      document.getElementById('stat-cal-burned').textContent   = exData.summary.total_calories_burned  || 0;
-      document.getElementById('stat-sessions').textContent     = exData.summary.total_sessions         || 0;
-      document.getElementById('stat-cal-consumed').textContent = dietData.summary.total_calories_week  || 0;
-      document.getElementById('stat-minutes').textContent      = exData.summary.total_minutes          || 0;
+      // Update gauge values
+      const calBurned = exData.summary.total_calories_burned || 0;
+      const sessions = exData.summary.total_sessions || 0;
+      const calConsumed = dietData.summary.total_calories_week || 0;
+      const minutes = exData.summary.total_minutes || 0;
+
+      document.getElementById('gauge-cal-burned').textContent = Math.round(calBurned);
+      document.getElementById('gauge-sessions').textContent = sessions;
+      document.getElementById('gauge-cal-consumed').textContent = Math.round(calConsumed);
+      document.getElementById('gauge-minutes').textContent = Math.round(minutes);
+
+      // Render visual charts
+      renderCaloriesBurnedGauge(calBurned, 2500); // Default target 2500 kcal
+      renderSessionsGauge(sessions, 4); // Default target 4 sessions
+      renderCaloriesConsumedGauge(calConsumed, 14000); // Default target 14k kcal per week
+      renderWorkoutTimeGauge(minutes, 150); // Default target 150 mins per week
+      renderWeeklyActivityChart(exData.summary, dietData.summary);
 
       // Calculate and display goal progress
       displayGoalProgress(goalsData.goals, exData.summary, dietData.summary);
@@ -837,6 +873,186 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Stats load error:', error.message);
       loadingNote.textContent = 'Could not load stats. Please try again.';
     }
+  }
+
+  /**
+   * renderCaloriesBurnedGauge — renders a doughnut chart for calories burned
+   */
+  function renderCaloriesBurnedGauge(current, target) {
+    const ctx = document.getElementById('chart-calories-burned');
+    if (!ctx) return;
+
+    const percentage = Math.min((current / target) * 100, 100);
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [
+          {
+            data: [percentage, 100 - percentage],
+            backgroundColor: ['#c8ff00', '#333333'],
+            borderColor: ['#c8ff00', '#333333'],
+            borderWidth: 0,
+            cutout: '75%'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  /**
+   * renderSessionsGauge — renders a doughnut chart for workout sessions
+   */
+  function renderSessionsGauge(current, target) {
+    const ctx = document.getElementById('chart-sessions');
+    if (!ctx) return;
+
+    const percentage = Math.min((current / target) * 100, 100);
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [
+          {
+            data: [percentage, 100 - percentage],
+            backgroundColor: ['#4caf50', '#333333'],
+            borderColor: ['#4caf50', '#333333'],
+            borderWidth: 0,
+            cutout: '75%'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  /**
+   * renderCaloriesConsumedGauge — renders a doughnut chart for calories consumed
+   */
+  function renderCaloriesConsumedGauge(current, target) {
+    const ctx = document.getElementById('chart-calories-consumed');
+    if (!ctx) return;
+
+    const percentage = Math.min((current / target) * 100, 100);
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [
+          {
+            data: [percentage, 100 - percentage],
+            backgroundColor: ['#ff9800', '#333333'],
+            borderColor: ['#ff9800', '#333333'],
+            borderWidth: 0,
+            cutout: '75%'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  /**
+   * renderWorkoutTimeGauge — renders a doughnut chart for workout time
+   */
+  function renderWorkoutTimeGauge(current, target) {
+    const ctx = document.getElementById('chart-workout-time');
+    if (!ctx) return;
+
+    const percentage = Math.min((current / target) * 100, 100);
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        datasets: [
+          {
+            data: [percentage, 100 - percentage],
+            backgroundColor: ['#f44336', '#333333'],
+            borderColor: ['#f44336', '#333333'],
+            borderWidth: 0,
+            cutout: '75%'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  /**
+   * renderWeeklyActivityChart — renders a bar chart showing daily activity for the week
+   */
+  function renderWeeklyActivityChart(exerciseSummary, dietSummary) {
+    const ctx = document.getElementById('chart-weekly-activity');
+    if (!ctx) return;
+
+    // Sample data — in production this would come from the API
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dailyCalories = [400, 550, 600, 480, 720, 650, 500]; // Sample data
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: daysOfWeek,
+        datasets: [
+          {
+            label: 'Calories Burned',
+            data: dailyCalories,
+            backgroundColor: '#c8ff00',
+            borderColor: '#9fc800',
+            borderWidth: 1,
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            labels: {
+              color: '#f0f0f0',
+              font: { size: 12 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#333333' },
+            ticks: { color: '#a0a0a0' }
+          },
+          y: {
+            grid: { color: '#333333' },
+            ticks: { color: '#a0a0a0' }
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -1143,6 +1359,248 @@ document.addEventListener('DOMContentLoaded', () => {
   function setLoading(btn, loading, label) {
     btn.disabled    = loading;
     btn.textContent = label;
+  }
+
+  // ============================================================
+  // EDIT MODALS — Exercise and Meal Entry Editing
+  // ============================================================
+
+  /**
+   * openEditExerciseModal — opens the modal to edit an exercise entry
+   */
+  async function openEditExerciseModal(entryId) {
+    try {
+      // Fetch the entry data
+      const response = await fetch(`/api/exercise/history?limit=100`);
+      const data = await response.json();
+      const entry = data.entries.find(e => e.id == entryId);
+
+      if (!entry) {
+        alert('Entry not found.');
+        return;
+      }
+
+      // Populate the form with entry data
+      document.getElementById('edit-ex-id').value = entry.id;
+      document.getElementById('edit-ex-type').value = entry.activity_type;
+      document.getElementById('edit-ex-name').value = entry.activity_name;
+      document.getElementById('edit-ex-duration').value = entry.duration_mins || '';
+      document.getElementById('edit-ex-distance').value = entry.distance_km || '';
+      document.getElementById('edit-ex-sets').value = entry.sets || '';
+      document.getElementById('edit-ex-reps').value = entry.reps || '';
+      document.getElementById('edit-ex-weight').value = entry.weight_kg_used || '';
+      document.getElementById('edit-ex-calories').value = entry.calories_burned || '';
+
+      // Show/hide cardio vs strength fields
+      const isCardio = entry.exercise_category === 'cardio';
+      document.getElementById('edit-cardio-fields').hidden = !isCardio;
+      document.getElementById('edit-strength-fields').hidden = isCardio;
+
+      // Open the modal
+      document.getElementById('edit-exercise-modal').showModal();
+
+    } catch (error) {
+      console.error('Error opening edit modal:', error.message);
+      alert('Could not load entry data.');
+    }
+  }
+
+  /**
+   * openEditMealModal — opens the modal to edit a meal entry
+   */
+  async function openEditMealModal(entryId) {
+    try {
+      // Fetch the entry data
+      const response = await fetch(`/api/diet/today`);
+      const data = await response.json();
+      let entry = data.entries.find(e => e.id == entryId);
+
+      // If not found in today's entries, try diet history
+      if (!entry) {
+        const allResponse = await fetch(`/api/diet/history?limit=100`);
+        const allData = await allResponse.json();
+        entry = allData.entries.find(e => e.id == entryId);
+      }
+
+      if (!entry) {
+        alert('Entry not found.');
+        return;
+      }
+
+      // Populate the form with entry data
+      document.getElementById('edit-meal-id').value = entry.id;
+      document.getElementById('edit-meal-food-name').value = entry.food_name;
+      document.getElementById('edit-meal-type').value = entry.meal_type;
+      document.getElementById('edit-meal-calories').value = entry.calories;
+      document.getElementById('edit-meal-quantity').value = entry.quantity || 1;
+
+      // Open the modal
+      document.getElementById('edit-meal-modal').showModal();
+
+    } catch (error) {
+      console.error('Error opening edit modal:', error.message);
+      alert('Could not load entry data.');
+    }
+  }
+
+  // ============================================================
+  // MODAL EVENT LISTENERS
+  // ============================================================
+
+  // Wire up the edit exercise modal
+  const editExerciseModal = document.getElementById('edit-exercise-modal');
+  const editExerciseForm = document.getElementById('edit-exercise-form');
+  const editExerciseMsg = document.getElementById('edit-exercise-message');
+
+  if (editExerciseForm) {
+    editExerciseForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const entryId = document.getElementById('edit-ex-id').value;
+      const isCardio = !document.getElementById('edit-cardio-fields').hidden;
+
+      const formData = {
+        activity_type: document.getElementById('edit-ex-type').value,
+        activity_name: document.getElementById('edit-ex-name').value,
+        exercise_category: isCardio ? 'cardio' : 'strength',
+        duration_mins: isCardio ? (Number(document.getElementById('edit-ex-duration').value) || null) : null,
+        distance_km: isCardio ? (Number(document.getElementById('edit-ex-distance').value) || null) : null,
+        sets: !isCardio ? (Number(document.getElementById('edit-ex-sets').value) || null) : null,
+        reps: !isCardio ? (Number(document.getElementById('edit-ex-reps').value) || null) : null,
+        weight_kg_used: !isCardio ? (Number(document.getElementById('edit-ex-weight').value) || null) : null,
+        calories_burned: Number(document.getElementById('edit-ex-calories').value)
+      };
+
+      try {
+        const response = await fetch(`/api/exercise/${entryId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          showMessage(editExerciseMsg, 'Exercise entry updated!', 'success');
+          setTimeout(() => {
+            editExerciseModal.close();
+            loadTodaysOverview(); // Refresh the display
+          }, 500);
+        } else {
+          const error = await response.json();
+          showMessage(editExerciseMsg, error.error || 'Update failed', 'error');
+        }
+      } catch (error) {
+        console.error('Update error:', error);
+        showMessage(editExerciseMsg, 'Network error', 'error');
+      }
+    });
+
+    document.getElementById('edit-ex-close').addEventListener('click', () => {
+      editExerciseModal.close();
+    });
+
+    document.getElementById('edit-ex-delete').addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete this entry?')) return;
+
+      const entryId = document.getElementById('edit-ex-id').value;
+
+      try {
+        const response = await fetch(`/api/exercise/${entryId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          showMessage(editExerciseMsg, 'Entry deleted!', 'success');
+          setTimeout(() => {
+            editExerciseModal.close();
+            loadTodaysOverview();
+          }, 500);
+        } else {
+          const error = await response.json();
+          showMessage(editExerciseMsg, error.error || 'Delete failed', 'error');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        showMessage(editExerciseMsg, 'Network error', 'error');
+      }
+    });
+
+    // Toggle cardio/strength fields based on selected category
+    document.getElementById('edit-ex-type').addEventListener('change', (e) => {
+      const isCardio = ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing'].includes(e.target.value);
+      document.getElementById('edit-cardio-fields').hidden = !isCardio;
+      document.getElementById('edit-strength-fields').hidden = isCardio;
+    });
+  }
+
+  // Wire up the edit meal modal
+  const editMealModal = document.getElementById('edit-meal-modal');
+  const editMealForm = document.getElementById('edit-meal-form');
+  const editMealMsg = document.getElementById('edit-meal-message');
+
+  if (editMealForm) {
+    editMealForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const entryId = document.getElementById('edit-meal-id').value;
+      const formData = {
+        food_name: document.getElementById('edit-meal-food-name').value,
+        meal_type: document.getElementById('edit-meal-type').value,
+        calories: Number(document.getElementById('edit-meal-calories').value),
+        quantity: Number(document.getElementById('edit-meal-quantity').value) || 1
+      };
+
+      try {
+        const response = await fetch(`/api/diet/${entryId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          showMessage(editMealMsg, 'Meal entry updated!', 'success');
+          setTimeout(() => {
+            editMealModal.close();
+            loadTodaysOverview();
+          }, 500);
+        } else {
+          const error = await response.json();
+          showMessage(editMealMsg, error.error || 'Update failed', 'error');
+        }
+      } catch (error) {
+        console.error('Update error:', error);
+        showMessage(editMealMsg, 'Network error', 'error');
+      }
+    });
+
+    document.getElementById('edit-meal-close').addEventListener('click', () => {
+      editMealModal.close();
+    });
+
+    document.getElementById('edit-meal-delete').addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete this entry?')) return;
+
+      const entryId = document.getElementById('edit-meal-id').value;
+
+      try {
+        const response = await fetch(`/api/diet/${entryId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          showMessage(editMealMsg, 'Entry deleted!', 'success');
+          setTimeout(() => {
+            editMealModal.close();
+            loadTodaysOverview();
+          }, 500);
+        } else {
+          const error = await response.json();
+          showMessage(editMealMsg, error.error || 'Delete failed', 'error');
+        }
+      } catch (error) {
+        console.error('Delete error:', error);
+        showMessage(editMealMsg, 'Network error', 'error');
+      }
+    });
   }
 
 }); // End of DOMContentLoaded

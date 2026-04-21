@@ -657,6 +657,76 @@ select {
   color: var(--text-secondary);
 }
 
+/* ── VISUAL STATS GAUGES ──────────────────────────────────── */
+/* Circular progress gauges with Chart.js for stats */
+.stats-grid-visual {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.stat-gauge-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+  text-align: center;
+}
+
+.gauge-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.gauge-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-container canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.gauge-text {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.gauge-value {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--accent);
+  margin: 0;
+  line-height: 1;
+}
+
+.gauge-unit {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Chart container for weekly activity */
+.chart-container {
+  padding: var(--space-md) 0;
+}
+
 /* ── ACTIVITY LISTS ───────────────────────────────────────── */
 /* Lists of logged activities (exercise, meals, goals) */
 .activity-list {
@@ -692,6 +762,31 @@ select {
 .activity-detail {
   color: var(--text-secondary);
   font-size: 0.85rem;
+}
+
+/* Activity actions (edit button and tag) */
+.activity-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}
+
+/* Icon button for editing entries */
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background-color: var(--bg-secondary);
+  color: var(--accent);
 }
 
 /* Empty state message */
@@ -837,6 +932,60 @@ select {
   color: var(--text-muted);
   font-size: 0.9rem;
   font-style: italic;
+}
+
+/* ── MODALS ──────────────────────────────────────────────── */
+/* Dialog/modal styling for edit entry forms */
+dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  background-color: transparent;
+  padding: 0;
+  max-width: 500px;
+  width: 90vw;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-backdrop {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.modal-content {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.modal-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.modal-actions button {
+  flex: 1;
+}
+
+.btn-danger {
+  background-color: var(--error);
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background-color: #e53935;
 }
 
 /* ── RESPONSIVE DESIGN ────────────────────────────────────── */

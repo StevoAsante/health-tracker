@@ -388,27 +388,59 @@
     <section id="section-stats" class="dash-section" aria-label="Statistics" hidden>
       <h2 class="section-heading">Statistics</h2>
 
-      <div class="stats-grid">
-        <article class="stat-card">
-          <p class="stat-label">Calories Burned (7 days)</p>
-          <p class="stat-value" id="stat-cal-burned">—</p>
-          <p class="stat-unit">kcal</p>
-        </article>
-        <article class="stat-card">
-          <p class="stat-label">Exercise Sessions (7 days)</p>
-          <p class="stat-value" id="stat-sessions">—</p>
-          <p class="stat-unit">sessions</p>
-        </article>
-        <article class="stat-card">
-          <p class="stat-label">Calories Consumed (7 days)</p>
-          <p class="stat-value" id="stat-cal-consumed">—</p>
-          <p class="stat-unit">kcal</p>
-        </article>
-        <article class="stat-card">
-          <p class="stat-label">Total Workout Time (7 days)</p>
-          <p class="stat-value" id="stat-minutes">—</p>
-          <p class="stat-unit">mins</p>
-        </article>
+      <!-- Visual Gauge Cards -->
+      <div class="stats-grid-visual">
+        <div class="stat-gauge-card">
+          <h3 class="gauge-title">Calories Burned</h3>
+          <div class="gauge-container">
+            <canvas id="chart-calories-burned"></canvas>
+            <div class="gauge-text">
+              <p class="gauge-value" id="gauge-cal-burned">0</p>
+              <p class="gauge-unit">kcal</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-gauge-card">
+          <h3 class="gauge-title">Exercise Sessions</h3>
+          <div class="gauge-container">
+            <canvas id="chart-sessions"></canvas>
+            <div class="gauge-text">
+              <p class="gauge-value" id="gauge-sessions">0</p>
+              <p class="gauge-unit">sessions</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-gauge-card">
+          <h3 class="gauge-title">Calories Consumed</h3>
+          <div class="gauge-container">
+            <canvas id="chart-calories-consumed"></canvas>
+            <div class="gauge-text">
+              <p class="gauge-value" id="gauge-cal-consumed">0</p>
+              <p class="gauge-unit">kcal</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-gauge-card">
+          <h3 class="gauge-title">Workout Time</h3>
+          <div class="gauge-container">
+            <canvas id="chart-workout-time"></canvas>
+            <div class="gauge-text">
+              <p class="gauge-value" id="gauge-minutes">0</p>
+              <p class="gauge-unit">mins</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Activity Chart -->
+      <div class="dashboard-card">
+        <h3 class="card-heading">Weekly Activity Overview</h3>
+        <div class="chart-container" style="position: relative; height: 300px;">
+          <canvas id="chart-weekly-activity"></canvas>
+        </div>
       </div>
 
       <!-- Goal Progress Section -->
@@ -464,6 +496,128 @@
       </div>
     </section>
 
+    <!-- ── EDIT EXERCISE MODAL ──────────────────────────── -->
+    <dialog id="edit-exercise-modal" class="modal-backdrop">
+      <form id="edit-exercise-form" class="modal-content" novalidate>
+        <h3 class="modal-title">Edit Exercise Entry</h3>
+        
+        <input type="hidden" id="edit-ex-id" />
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-ex-type">Activity type</label>
+            <select id="edit-ex-type" name="activity_type" required>
+              <option value="">Select type</option>
+              <option value="Running">Running</option>
+              <option value="Cycling">Cycling</option>
+              <option value="Swimming">Swimming</option>
+              <option value="Walking">Walking</option>
+              <option value="HIIT">HIIT</option>
+              <option value="Rowing">Rowing</option>
+              <option value="Bench Press">Bench Press</option>
+              <option value="Squat">Squat</option>
+              <option value="Deadlift">Deadlift</option>
+              <option value="Overhead Press">Overhead Press</option>
+              <option value="Pull Ups">Pull Ups</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-ex-name">Exercise name</label>
+            <input type="text" id="edit-ex-name" name="activity_name" required />
+          </div>
+        </div>
+
+        <div id="edit-cardio-fields" class="conditional-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-ex-duration">Duration (mins)</label>
+              <input type="number" id="edit-ex-duration" name="duration_mins" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="edit-ex-distance">Distance (km)</label>
+              <input type="number" id="edit-ex-distance" name="distance_km" min="0" step="0.1" />
+            </div>
+          </div>
+        </div>
+
+        <div id="edit-strength-fields" class="conditional-fields" hidden>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-ex-sets">Sets</label>
+              <input type="number" id="edit-ex-sets" name="sets" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="edit-ex-reps">Reps</label>
+              <input type="number" id="edit-ex-reps" name="reps" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="edit-ex-weight">Weight (kg)</label>
+              <input type="number" id="edit-ex-weight" name="weight_kg_used" min="0" step="0.5" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-ex-calories">Calories burned</label>
+          <input type="number" id="edit-ex-calories" name="calories_burned" min="0" required />
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-secondary" id="edit-ex-close">Cancel</button>
+          <button type="button" class="btn btn-danger" id="edit-ex-delete">Delete Entry</button>
+        </div>
+
+        <p class="form-message" id="edit-exercise-message" aria-live="polite"></p>
+      </form>
+    </dialog>
+
+    <!-- ── EDIT MEAL MODAL ────────────────────────────────── -->
+    <dialog id="edit-meal-modal" class="modal-backdrop">
+      <form id="edit-meal-form" class="modal-content" novalidate>
+        <h3 class="modal-title">Edit Meal Entry</h3>
+        
+        <input type="hidden" id="edit-meal-id" />
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-meal-food-name">Food name</label>
+            <input type="text" id="edit-meal-food-name" name="food_name" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-meal-type">Meal type</label>
+            <select id="edit-meal-type" name="meal_type" required>
+              <option value="">Select meal</option>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+              <option value="snack">Snack</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-meal-calories">Calories (kcal)</label>
+            <input type="number" id="edit-meal-calories" name="calories" min="0" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-meal-quantity">Quantity / portions</label>
+            <input type="number" id="edit-meal-quantity" name="quantity" min="0.1" step="0.1" value="1" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-secondary" id="edit-meal-close">Cancel</button>
+          <button type="button" class="btn btn-danger" id="edit-meal-delete">Delete Entry</button>
+        </div>
+
+        <p class="form-message" id="edit-meal-message" aria-live="polite"></p>
+      </form>
+    </dialog>
+
   </main>
 
   <!--
@@ -471,6 +625,7 @@
     All JavaScript for the dashboard lives in this one file —
     no inline scripts anywhere in this HTML.
   -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="/js/dashboard.js"></script>
 
 </body>

@@ -174,4 +174,103 @@ router.get('/weekly-summary', requireLogin, async (req, res) => {
   }
 });
 
+// ── PUT /api/exercise/:id ────────────────────────────────
+// Updates an existing exercise entry for the logged-in user.
+router.put('/:id', requireLogin, async (req, res) => {
+  const entryId = req.params.id;
+  const {
+    activity_type,
+    activity_name,
+    exercise_category,
+    duration_mins,
+    distance_km,
+    sets,
+    reps,
+    weight_kg_used,
+    calories_burned
+  } = req.body;
+
+  try {
+    // First, check that this entry belongs to the current user
+    const checkResult = await db.query(
+      'SELECT user_id FROM exercise_entries WHERE id = $1',
+      [entryId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found.' });
+    }
+
+    if (checkResult.rows[0].user_id !== req.session.userId) {
+      return res.status(403).json({ error: 'You can only edit your own entries.' });
+    }
+
+    const result = await db.query(
+      `UPDATE exercise_entries
+       SET activity_type = $1,
+           activity_name = $2,
+           exercise_category = $3,
+           duration_mins = $4,
+           distance_km = $5,
+           sets = $6,
+           reps = $7,
+           weight_kg_used = $8,
+           calories_burned = $9
+       WHERE id = $10
+       RETURNING *`,
+      [
+        activity_type,
+        activity_name,
+        exercise_category,
+        duration_mins || null,
+        distance_km || null,
+        sets || null,
+        reps || null,
+        weight_kg_used || null,
+        calories_burned,
+        entryId
+      ]
+    );
+
+    return res.status(200).json({
+      message: 'Exercise entry updated successfully!',
+      entry: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Exercise update error:', error.message);
+    return res.status(500).json({ error: 'Failed to update exercise entry.' });
+  }
+});
+
+// ── DELETE /api/exercise/:id ─────────────────────────────
+// Deletes an exercise entry for the logged-in user.
+router.delete('/:id', requireLogin, async (req, res) => {
+  const entryId = req.params.id;
+
+  try {
+    // First, check that this entry belongs to the current user
+    const checkResult = await db.query(
+      'SELECT user_id FROM exercise_entries WHERE id = $1',
+      [entryId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found.' });
+    }
+
+    if (checkResult.rows[0].user_id !== req.session.userId) {
+      return res.status(403).json({ error: 'You can only delete your own entries.' });
+    }
+
+    await db.query('DELETE FROM exercise_entries WHERE id = $1', [entryId]);
+
+    return res.status(200).json({ message: 'Exercise entry deleted successfully!' });
+
+  } catch (error) {
+    console.error('Exercise delete error:', error.message);
+    return res.status(500).json({ error: 'Failed to delete exercise entry.' });
+  }
+});
+
 module.exports = router;

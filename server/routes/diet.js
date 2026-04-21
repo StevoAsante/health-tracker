@@ -116,6 +116,29 @@ router.get('/today', requireLogin, async (req, res) => {
   }
 });
 
+// ── GET /api/diet/history ────────────────────────────────
+// Returns diet entries for the user, most recent first.
+// Optional limit parameter (default 50).
+router.get('/history', requireLogin, async (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+
+  try {
+    const result = await db.query(
+      `SELECT * FROM diet_entries
+       WHERE user_id = $1
+       ORDER BY logged_at DESC
+       LIMIT $2`,
+      [req.session.userId, limit]
+    );
+
+    return res.status(200).json({ entries: result.rows });
+
+  } catch (error) {
+    console.error('Diet history error:', error.message);
+    return res.status(500).json({ error: 'Failed to load diet history.' });
+  }
+});
+
 // ── GET /api/diet/foods ──────────────────────────────────
 // Searches the food items list (both default and user-created).
 // Used to populate the food search dropdown on the log meal form.
@@ -189,6 +212,85 @@ router.get('/weekly-summary', requireLogin, async (req, res) => {
   } catch (error) {
     console.error('Diet weekly summary error:', error.message);
     return res.status(500).json({ error: 'Failed to load weekly diet summary.' });
+  }
+});
+
+// ── PUT /api/diet/:id ────────────────────────────────────
+// Updates an existing diet entry for the logged-in user.
+router.put('/:id', requireLogin, async (req, res) => {
+  const entryId = req.params.id;
+  const { food_name, meal_type, calories, quantity } = req.body;
+
+  if (!food_name || !meal_type || !calories) {
+    return res.status(400).json({
+      error: 'Food name, meal type, and calories are required.'
+    });
+  }
+
+  try {
+    // First, check that this entry belongs to the current user
+    const checkResult = await db.query(
+      'SELECT user_id FROM diet_entries WHERE id = $1',
+      [entryId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found.' });
+    }
+
+    if (checkResult.rows[0].user_id !== req.session.userId) {
+      return res.status(403).json({ error: 'You can only edit your own entries.' });
+    }
+
+    const result = await db.query(
+      `UPDATE diet_entries
+       SET food_name = $1,
+           meal_type = $2,
+           calories = $3,
+           quantity = $4
+       WHERE id = $5
+       RETURNING *`,
+      [food_name, meal_type, Math.round(Number(calories)), quantity || 1, entryId]
+    );
+
+    return res.status(200).json({
+      message: 'Meal entry updated successfully!',
+      entry: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Diet update error:', error.message);
+    return res.status(500).json({ error: 'Failed to update meal entry.' });
+  }
+});
+
+// ── DELETE /api/diet/:id ─────────────────────────────────
+// Deletes a diet entry for the logged-in user.
+router.delete('/:id', requireLogin, async (req, res) => {
+  const entryId = req.params.id;
+
+  try {
+    // First, check that this entry belongs to the current user
+    const checkResult = await db.query(
+      'SELECT user_id FROM diet_entries WHERE id = $1',
+      [entryId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Entry not found.' });
+    }
+
+    if (checkResult.rows[0].user_id !== req.session.userId) {
+      return res.status(403).json({ error: 'You can only delete your own entries.' });
+    }
+
+    await db.query('DELETE FROM diet_entries WHERE id = $1', [entryId]);
+
+    return res.status(200).json({ message: 'Meal entry deleted successfully!' });
+
+  } catch (error) {
+    console.error('Diet delete error:', error.message);
+    return res.status(500).json({ error: 'Failed to delete meal entry.' });
   }
 });
 
