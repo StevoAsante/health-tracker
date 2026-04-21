@@ -80,12 +80,20 @@ const exerciseRoutes = require('./routes/exercise');
 const dietRoutes     = require('./routes/diet');
 const goalRoutes     = require('./routes/goals');
 const groupRoutes    = require('./routes/groups');
+const libraryRoutes  = require('./routes/library');
+const routineRoutes  = require('./routes/routines');
+const recordRoutes   = require('./routes/records');
+const socialRoutes   = require('./routes/social');
 
 app.use('/api/auth',     authRoutes);      // /api/auth/login, /api/auth/register, etc.
 app.use('/api/exercise', exerciseRoutes);  // /api/exercise/log, /api/exercise/history, etc.
 app.use('/api/diet',     dietRoutes);      // /api/diet/log, /api/diet/history, etc.
 app.use('/api/goals',    goalRoutes);      // /api/goals/create, /api/goals/list, etc.
 app.use('/api/groups',   groupRoutes);     // /api/groups/create, /api/groups/join, etc.
+app.use('/api/library',  libraryRoutes);   // /api/library/exercises, etc.
+app.use('/api/routines', routineRoutes);   // /api/routines/list, /api/routines/create, etc.
+app.use('/api/records',  recordRoutes);    // /api/records/list, /api/records/stats, etc.
+app.use('/api/social',   socialRoutes);    // /api/social/feed, /api/social/posts, etc.
 
 // ── PAGE ROUTES ──────────────────────────────────────────
 // These routes serve the actual HTML pages.

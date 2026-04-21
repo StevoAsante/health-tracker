@@ -27,6 +27,10 @@
     <nav class="header-nav" aria-label="Main navigation">
       <button class="nav-btn active" data-section="overview"   aria-current="page">Overview</button>
       <button class="nav-btn"        data-section="exercise">Exercise</button>
+      <button class="nav-btn"        data-section="library">Library</button>
+      <button class="nav-btn"        data-section="routines">Routines</button>
+      <button class="nav-btn"        data-section="records">Records</button>
+      <button class="nav-btn"        data-section="social">Social</button>
       <button class="nav-btn"        data-section="diet">Diet</button>
       <button class="nav-btn"        data-section="goals">Goals</button>
       <button class="nav-btn"        data-section="stats">Stats</button>
@@ -170,6 +174,25 @@
                 <label for="ex-weight">Weight (kg)</label>
                 <input type="number" id="ex-weight" name="weight_kg_used" min="0" step="0.5" placeholder="60.0" />
               </div>
+            </div>
+
+            <!-- New weightlifting fields -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="ex-rpe">RPE <span class="hint">(Rate of Perceived Exertion, 1-10)</span></label>
+                <input type="number" id="ex-rpe" name="rpe" min="1" max="10" placeholder="7" />
+              </div>
+              <div class="form-group">
+                <label for="ex-exercise-select">Exercise from Library</label>
+                <select id="ex-exercise-select" name="exercise_id">
+                  <option value="">Select from library (optional)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="ex-notes">Notes</label>
+              <textarea id="ex-notes" name="notes" rows="2" placeholder="How did it feel? Any observations..."></textarea>
             </div>
           </div>
 
@@ -493,6 +516,119 @@
         <ul id="groups-list" class="groups-list" aria-label="Groups you belong to">
           <li class="empty-state">You haven't joined any groups yet.</li>
         </ul>
+      </div>
+    </section>
+
+    <!-- ── EXERCISE LIBRARY SECTION ──────────────────────────── -->
+    <section id="section-library" class="dash-section" aria-label="Exercise Library" hidden>
+      <h2 class="section-heading">Exercise Library</h2>
+
+      <div class="dashboard-card">
+        <div class="library-controls">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="library-search">Search exercises</label>
+              <input type="text" id="library-search" placeholder="Search by name, muscle group, or equipment..." />
+            </div>
+            <div class="form-group">
+              <label for="library-muscle-filter">Muscle group</label>
+              <select id="library-muscle-filter">
+                <option value="">All muscles</option>
+                <option value="Chest">Chest</option>
+                <option value="Back">Back</option>
+                <option value="Legs">Legs</option>
+                <option value="Shoulders">Shoulders</option>
+                <option value="Arms">Arms</option>
+                <option value="Core">Core</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="library-equipment-filter">Equipment</label>
+              <select id="library-equipment-filter">
+                <option value="">All equipment</option>
+                <option value="Barbell">Barbell</option>
+                <option value="Dumbbell">Dumbbell</option>
+                <option value="Machine">Machine</option>
+                <option value="Bodyweight">Bodyweight</option>
+                <option value="Cable">Cable</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="exercise-library-grid" class="exercise-grid">
+          <div class="empty-state">Loading exercises...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WORKOUT ROUTINES SECTION ──────────────────────────── -->
+    <section id="section-routines" class="dash-section" aria-label="Workout Routines" hidden>
+      <h2 class="section-heading">Workout Routines</h2>
+
+      <div class="dashboard-card">
+        <div class="routine-controls">
+          <button class="btn btn-primary" id="create-routine-btn">Create New Routine</button>
+          <div class="routine-filters">
+            <label><input type="checkbox" id="show-public-routines" /> Show public routines</label>
+          </div>
+        </div>
+
+        <div id="routines-list" class="routines-list">
+          <div class="empty-state">No routines yet. Create your first workout routine!</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PERSONAL RECORDS SECTION ──────────────────────────── -->
+    <section id="section-records" class="dash-section" aria-label="Personal Records" hidden>
+      <h2 class="section-heading">Personal Records</h2>
+
+      <div class="dashboard-card">
+        <div class="records-controls">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="records-exercise-filter">Filter by exercise</label>
+              <select id="records-exercise-filter">
+                <option value="">All exercises</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="records-type-filter">Record type</label>
+              <select id="records-type-filter">
+                <option value="">All types</option>
+                <option value="weight">Max Weight</option>
+                <option value="reps">Max Reps</option>
+                <option value="volume">Max Volume</option>
+                <option value="one_rep_max">1RM</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="personal-records-list" class="records-list">
+          <div class="empty-state">No personal records yet. Start lifting to set your first PR!</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SOCIAL FEED SECTION ──────────────────────────── -->
+    <section id="section-social" class="dash-section" aria-label="Social Feed" hidden>
+      <h2 class="section-heading">Social Feed</h2>
+
+      <div class="dashboard-card">
+        <div class="social-controls">
+          <button class="btn btn-primary" id="create-post-btn">Share Workout</button>
+          <div class="feed-filters">
+            <button class="feed-filter active" data-filter="all">All Posts</button>
+            <button class="feed-filter" data-filter="following">Following</button>
+            <button class="feed-filter" data-filter="mine">My Posts</button>
+          </div>
+        </div>
+
+        <div id="social-feed" class="social-feed">
+          <div class="empty-state">No posts yet. Be the first to share your workout!</div>
+        </div>
       </div>
     </section>
 

@@ -130,6 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // We don't want stale data showing from a previous visit
         if (targetSection === 'overview')  loadOverview();
         if (targetSection === 'exercise')  loadExerciseHistory();
+        if (targetSection === 'library')   loadExerciseLibrary();
+        if (targetSection === 'routines')  loadWorkoutRoutines();
+        if (targetSection === 'records')   loadPersonalRecords();
+        if (targetSection === 'social')    loadSocialFeed();
         if (targetSection === 'diet')      loadTodaysDiet();
         if (targetSection === 'goals')     loadGoals();
         if (targetSection === 'stats')     loadStats();
@@ -284,6 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // so the submit handler can read it when building the request
     let currentCategory = 'cardio';
 
+    // Load exercise library for the dropdown
+    loadExerciseLibraryForForm();
+
     // ── Category toggle buttons ────────────────────────────
     // When the user clicks "Cardio", show cardio fields and hide strength fields
     cardioBtn.addEventListener('click', () => {
@@ -327,6 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
         body.sets           = formData.get('sets')           || null;
         body.reps           = formData.get('reps')           || null;
         body.weight_kg_used = formData.get('weight_kg_used') || null;
+        body.rpe            = formData.get('rpe')            || null;
+        body.notes          = formData.get('notes')          || null;
+        body.exercise_id    = formData.get('exercise_id')    || null;
       }
 
       // Quick validation — at minimum we need a type and name
@@ -364,6 +374,31 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(submitBtn, false, 'Log Exercise');
       }
     });
+  }
+
+  /**
+   * loadExerciseLibraryForForm — populates the exercise dropdown in the exercise form
+   */
+  async function loadExerciseLibraryForForm() {
+    console.log('Loading exercise library for form...');
+    try {
+      const response = await fetch('/api/library/exercises');
+      const exercises = await response.json();
+      console.log('Loaded exercises:', exercises.length);
+
+      const select = document.getElementById('ex-exercise-select');
+      select.innerHTML = '<option value="">Select from library (optional)</option>';
+
+      exercises.forEach(exercise => {
+        const option = document.createElement('option');
+        option.value = exercise.id;
+        option.textContent = `${exercise.name} (${exercise.muscle_group})`;
+        select.appendChild(option);
+      });
+      console.log('Exercise dropdown populated');
+    } catch (error) {
+      console.error('Failed to load exercise library for form:', error);
+    }
   }
 
   /**
@@ -1602,5 +1637,310 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // ============================================================
+  // SECTION: Exercise Library
+  // ============================================================
+
+  async function loadExerciseLibrary() {
+    try {
+      const response = await fetch('/api/library/exercises');
+      const exercises = await response.json();
+
+      const grid = document.getElementById('exercise-library-grid');
+      grid.innerHTML = '';
+
+      if (exercises.length === 0) {
+        grid.innerHTML = '<div class="empty-state">No exercises found.</div>';
+        return;
+      }
+
+      exercises.forEach(exercise => {
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        card.innerHTML = `
+          <h4>${exercise.name}</h4>
+          <div class="exercise-meta">
+            <span class="muscle-group">${exercise.muscle_group}</span>
+            <span class="equipment">${exercise.equipment || 'Bodyweight'}</span>
+            <span class="difficulty ${exercise.difficulty}">${exercise.difficulty}</span>
+          </div>
+          <p class="exercise-instructions">${exercise.instructions || 'No instructions available.'}</p>
+          <button class="btn btn-sm" onclick="selectExercise(${exercise.id}, '${exercise.name}')">Use This Exercise</button>
+        `;
+        grid.appendChild(card);
+      });
+
+      setupLibraryFilters();
+
+    } catch (error) {
+      console.error('Failed to load exercise library:', error);
+      document.getElementById('exercise-library-grid').innerHTML =
+        '<div class="empty-state">Failed to load exercises.</div>';
+    }
+  }
+
+  function setupLibraryFilters() {
+    const searchInput = document.getElementById('library-search');
+    const muscleFilter = document.getElementById('library-muscle-filter');
+    const equipmentFilter = document.getElementById('library-equipment-filter');
+
+    function filterExercises() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const muscleValue = muscleFilter.value;
+      const equipmentValue = equipmentFilter.value;
+
+      const cards = document.querySelectorAll('.exercise-card');
+      cards.forEach(card => {
+        const name = card.querySelector('h4').textContent.toLowerCase();
+        const muscle = card.querySelector('.muscle-group').textContent;
+        const equipment = card.querySelector('.equipment').textContent;
+
+        const matchesSearch = name.includes(searchTerm);
+        const matchesMuscle = !muscleValue || muscle === muscleValue;
+        const matchesEquipment = !equipmentValue || equipment === equipmentValue;
+
+        card.style.display = matchesSearch && matchesMuscle && matchesEquipment ? 'block' : 'none';
+      });
+    }
+
+    searchInput.addEventListener('input', filterExercises);
+    muscleFilter.addEventListener('change', filterExercises);
+    equipmentFilter.addEventListener('change', filterExercises);
+  }
+
+  // ============================================================
+  // SECTION: Workout Routines
+  // ============================================================
+
+  async function loadWorkoutRoutines() {
+    try {
+      const response = await fetch('/api/routines/list');
+      const routines = await response.json();
+
+      const container = document.getElementById('routines-list');
+      container.innerHTML = '';
+
+      if (routines.length === 0) {
+        container.innerHTML = '<div class="empty-state">No routines yet. Create your first workout routine!</div>';
+        return;
+      }
+
+      routines.forEach(routine => {
+        const card = document.createElement('div');
+        card.className = 'routine-card';
+        card.innerHTML = `
+          <h4>${routine.name}</h4>
+          <p>${routine.description || 'No description'}</p>
+          <div class="routine-meta">
+            <span>Difficulty: ${routine.difficulty}</span>
+            <span>Exercises: ${routine.exercise_count || 0}</span>
+            ${routine.estimated_time ? `<span>Time: ${routine.estimated_time}min</span>` : ''}
+          </div>
+          <div class="routine-actions">
+            <button class="btn btn-sm" onclick="viewRoutine(${routine.id})">View</button>
+            <button class="btn btn-sm btn-secondary" onclick="startRoutine(${routine.id})">Start Workout</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+    } catch (error) {
+      console.error('Failed to load routines:', error);
+      document.getElementById('routines-list').innerHTML =
+        '<div class="empty-state">Failed to load routines.</div>';
+    }
+  }
+
+  // ============================================================
+  // SECTION: Personal Records
+  // ============================================================
+
+  async function loadPersonalRecords() {
+    try {
+      const response = await fetch('/api/records/list');
+      const records = await response.json();
+
+      const container = document.getElementById('personal-records-list');
+      container.innerHTML = '';
+
+      if (records.length === 0) {
+        container.innerHTML = '<div class="empty-state">No personal records yet. Start lifting to set your first PR!</div>';
+        return;
+      }
+
+      // Group records by exercise
+      const groupedRecords = {};
+      records.forEach(record => {
+        const key = record.exercise_id || record.custom_exercise;
+        if (!groupedRecords[key]) {
+          groupedRecords[key] = {
+            exercise: record.exercise_name || record.custom_exercise,
+            records: []
+          };
+        }
+        groupedRecords[key].records.push(record);
+      });
+
+      Object.values(groupedRecords).forEach(group => {
+        const section = document.createElement('div');
+        section.className = 'records-section';
+        section.innerHTML = `<h4>${group.exercise}</h4>`;
+
+        const recordsList = document.createElement('div');
+        recordsList.className = 'records-grid';
+
+        group.records.forEach(record => {
+          const recordEl = document.createElement('div');
+          recordEl.className = 'record-item';
+          recordEl.innerHTML = `
+            <div class="record-type">${record.record_type.replace('_', ' ').toUpperCase()}</div>
+            <div class="record-value">${record.value} ${getRecordUnit(record.record_type)}</div>
+            <div class="record-date">${new Date(record.achieved_at).toLocaleDateString()}</div>
+          `;
+          recordsList.appendChild(recordEl);
+        });
+
+        section.appendChild(recordsList);
+        container.appendChild(section);
+      });
+
+      setupRecordsFilters();
+
+    } catch (error) {
+      console.error('Failed to load records:', error);
+      document.getElementById('personal-records-list').innerHTML =
+        '<div class="empty-state">Failed to load records.</div>';
+    }
+  }
+
+  function getRecordUnit(type) {
+    switch (type) {
+      case 'weight': return 'kg';
+      case 'reps': return 'reps';
+      case 'volume': return 'kg';
+      case 'one_rep_max': return 'kg';
+      default: return '';
+    }
+  }
+
+  function setupRecordsFilters() {
+    // Populate exercise filter
+    const exerciseFilter = document.getElementById('records-exercise-filter');
+    const exercises = Array.from(document.querySelectorAll('.records-section h4')).map(h4 => h4.textContent);
+    exercises.forEach(exercise => {
+      const option = document.createElement('option');
+      option.value = exercise;
+      option.textContent = exercise;
+      exerciseFilter.appendChild(option);
+    });
+
+    function filterRecords() {
+      const exerciseValue = exerciseFilter.value;
+      const typeValue = document.getElementById('records-type-filter').value;
+
+      const sections = document.querySelectorAll('.records-section');
+      sections.forEach(section => {
+        const exercise = section.querySelector('h4').textContent;
+        const records = section.querySelectorAll('.record-item');
+
+        const exerciseMatch = !exerciseValue || exercise === exerciseValue;
+        section.style.display = exerciseMatch ? 'block' : 'none';
+
+        if (exerciseMatch && typeValue) {
+          records.forEach(record => {
+            const type = record.querySelector('.record-type').textContent.toLowerCase().replace(' ', '_');
+            const typeMatch = type.includes(typeValue.toLowerCase());
+            record.style.display = typeMatch ? 'block' : 'none';
+          });
+        } else {
+          records.forEach(record => record.style.display = 'block');
+        }
+      });
+    }
+
+    exerciseFilter.addEventListener('change', filterRecords);
+    document.getElementById('records-type-filter').addEventListener('change', filterRecords);
+  }
+
+  // ============================================================
+  // SECTION: Social Feed
+  // ============================================================
+
+  async function loadSocialFeed() {
+    try {
+      const response = await fetch('/api/social/feed');
+      const posts = await response.json();
+
+      const feed = document.getElementById('social-feed');
+      feed.innerHTML = '';
+
+      if (posts.length === 0) {
+        feed.innerHTML = '<div class="empty-state">No posts yet. Be the first to share your workout!</div>';
+        return;
+      }
+
+      posts.forEach(post => {
+        const postEl = document.createElement('div');
+        postEl.className = 'social-post';
+        postEl.innerHTML = `
+          <div class="post-header">
+            <strong>${post.username}</strong>
+            <span class="post-date">${new Date(post.created_at).toLocaleDateString()}</span>
+          </div>
+          <div class="post-content">${post.content}</div>
+          ${post.workout_data ? `<div class="post-workout">${formatWorkoutData(post.workout_data)}</div>` : ''}
+          ${post.image_url ? `<img src="${post.image_url}" alt="Workout photo" class="post-image">` : ''}
+          <div class="post-actions">
+            <button class="btn btn-sm" onclick="likePost(${post.id})">
+              ❤️ ${post.likes_count || 0}
+            </button>
+            <button class="btn btn-sm" onclick="commentOnPost(${post.id})">
+              💬 ${post.comments_count || 0}
+            </button>
+          </div>
+        `;
+        feed.appendChild(postEl);
+      });
+
+    } catch (error) {
+      console.error('Failed to load social feed:', error);
+      document.getElementById('social-feed').innerHTML =
+        '<div class="empty-state">Failed to load feed.</div>';
+    }
+  }
+
+  function formatWorkoutData(workoutData) {
+    // Simple formatting of workout data - could be enhanced
+    return `<pre>${JSON.stringify(workoutData, null, 2)}</pre>`;
+  }
+
+  // Global functions for onclick handlers
+  window.selectExercise = function(id, name) {
+    // Switch to exercise tab and pre-fill the form
+    document.querySelector('[data-section="exercise"]').click();
+    // This would need more implementation to actually select the exercise
+    console.log('Selected exercise:', id, name);
+  };
+
+  window.viewRoutine = function(id) {
+    console.log('View routine:', id);
+    // TODO: Implement routine viewer
+  };
+
+  window.startRoutine = function(id) {
+    console.log('Start routine:', id);
+    // TODO: Implement workout starter
+  };
+
+  window.likePost = function(id) {
+    console.log('Like post:', id);
+    // TODO: Implement liking
+  };
+
+  window.commentOnPost = function(id) {
+    console.log('Comment on post:', id);
+    // TODO: Implement commenting
+  };
 
 }); // End of DOMContentLoaded

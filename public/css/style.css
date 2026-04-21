@@ -1024,6 +1024,300 @@ dialog::backdrop {
   }
 }
 
+/* ── EXERCISE LIBRARY STYLES ────────────────────────────── */
+.exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-md);
+}
+
+.exercise-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-lg);
+  transition: all 0.2s ease;
+}
+
+.exercise-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.exercise-card h4 {
+  color: var(--accent);
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 1.2rem;
+}
+
+.exercise-meta {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.muscle-group, .equipment, .difficulty {
+  background: var(--bg-tertiary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.difficulty.beginner { background: #4caf50; color: white; }
+.difficulty.intermediate { background: #ff9800; color: white; }
+.difficulty.advanced { background: #f44336; color: white; }
+
+.exercise-instructions {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: var(--space-md);
+}
+
+.library-controls {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+/* ── WORKOUT ROUTINES STYLES ───────────────────────────── */
+.routines-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-md);
+}
+
+.routine-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-lg);
+  transition: all 0.2s ease;
+}
+
+.routine-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.routine-card h4 {
+  color: var(--accent);
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 1.2rem;
+}
+
+.routine-meta {
+  display: flex;
+  gap: var(--space-md);
+  margin: var(--space-md) 0;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.routine-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.routine-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.routine-filters {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* ── PERSONAL RECORDS STYLES ──────────────────────────── */
+.records-list {
+  margin-top: var(--space-md);
+}
+
+.records-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.records-section h4 {
+  color: var(--accent);
+  margin: 0 0 var(--space-md) 0;
+  font-size: 1.1rem;
+}
+
+.records-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.record-item {
+  background: var(--bg-tertiary);
+  padding: var(--space-md);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.record-type {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.record-value {
+  font-size: 1.2rem;
+  color: var(--accent);
+  font-weight: bold;
+  margin-bottom: var(--space-xs);
+}
+
+.record-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.records-controls {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+/* ── SOCIAL FEED STYLES ──────────────────────────────── */
+.social-feed {
+  margin-top: var(--space-md);
+}
+
+.social-post {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.post-header strong {
+  color: var(--accent);
+}
+
+.post-date {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.post-content {
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-bottom: var(--space-md);
+}
+
+.post-workout {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: var(--space-md);
+  margin: var(--space-md) 0;
+  font-family: monospace;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.post-image {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: var(--space-md) 0;
+}
+
+.post-actions {
+  display: flex;
+  gap: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+}
+
+.social-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.feed-filters {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.feed-filter {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feed-filter.active {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+}
+
+.feed-filter:hover {
+  border-color: var(--accent);
+}
+
+/* ── RESPONSIVE DESIGN FOR NEW SECTIONS ────────────────── */
+@media (max-width: 768px) {
+  .exercise-grid,
+  .routines-list {
+    grid-template-columns: 1fr;
+  }
+
+  .records-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .routine-controls,
+  .social-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .routine-actions,
+  .post-actions {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}
+
 @media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: 1fr;
