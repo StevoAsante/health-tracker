@@ -1586,12 +1586,18 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
       }
 
-    } catch (error) {
-      console.error('Failed to load routines:', error);
-      document.getElementById('private-routines-list').innerHTML =
+      } catch (error) {
+    console.error('Failed to load routines:', error);
+    const privateContainer = document.getElementById('private-routines-list');
+    const publicContainer  = document.getElementById('public-routines-list');
+    if (privateContainer) {
+      privateContainer.innerHTML =
         '<div class="empty-state">Failed to load routines.</div>';
-      document.getElementById('public-routines-list').innerHTML =
+    }
+    if (publicContainer) {
+      publicContainer.innerHTML =
         '<div class="empty-state">Failed to load routines.</div>';
+    }
     }
   }
 
@@ -1963,48 +1969,7 @@ document.addEventListener('DOMContentLoaded', () => {
     equipmentFilter.addEventListener('change', filterExercises);
   }
 
-  // ============================================================
-  // SECTION: Workout Routines
-  // ============================================================
 
-  async function loadWorkoutRoutines() {
-    try {
-      const response = await fetch('/api/routines/list');
-      const routines = await response.json();
-
-      const container = document.getElementById('routines-list');
-      container.innerHTML = '';
-
-      if (routines.length === 0) {
-        container.innerHTML = '<div class="empty-state">No routines yet. Create your first workout routine!</div>';
-        return;
-      }
-
-      routines.forEach(routine => {
-        const card = document.createElement('div');
-        card.className = 'routine-card';
-        card.innerHTML = `
-          <h4>${routine.name}</h4>
-          <p>${routine.description || 'No description'}</p>
-          <div class="routine-meta">
-            <span>Difficulty: ${routine.difficulty}</span>
-            <span>Exercises: ${routine.exercise_count || 0}</span>
-            ${routine.estimated_time ? `<span>Time: ${routine.estimated_time}min</span>` : ''}
-          </div>
-          <div class="routine-actions">
-            <button class="btn btn-sm" onclick="viewRoutine(${routine.id})">View</button>
-            <button class="btn btn-sm btn-secondary" onclick="startRoutine(${routine.id})">Start Workout</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-
-    } catch (error) {
-      console.error('Failed to load routines:', error);
-      document.getElementById('routines-list').innerHTML =
-        '<div class="empty-state">Failed to load routines.</div>';
-    }
-  }
 
   // ============================================================
   // SECTION: Personal Records
