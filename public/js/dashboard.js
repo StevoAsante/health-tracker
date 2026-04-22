@@ -49,9 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
   setupExerciseForm();
   setupDietForm();
   setupDietTabs();
+  setupSocialTabs();
   setupGoalsForm();
   setupGroupForms();
   setupRoutinesForm();
+  setupStartWorkoutModal();
 
   // ── STEP 5: LOGOUT BUTTON ───────────────────────────────
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -494,10 +496,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show dropdown with suggestions
             suggestionsDiv.innerHTML = currentSuggestions
               .map((food, index) => `<div class="suggestion-item" data-index="${index}" data-calories="${food.calories}">${food.name}</div>`)
-              .join('');
+              .join('') + `<div class="suggestion-item custom-option" data-index="-1">+ Add Custom Food</div>`;
             suggestionsDiv.style.display = 'block';
           } else {
-            suggestionsDiv.style.display = 'none';
+            // No results — show custom option only
+            currentSuggestions = [];
+            suggestionsDiv.innerHTML = `<div class="suggestion-item custom-option" data-index="-1">+ Add Custom Food</div>`;
+            suggestionsDiv.style.display = 'block';
           }
         } catch (error) {
           console.error('Food search error:', error);
@@ -509,9 +514,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle clicking on suggestions
     suggestionsDiv.addEventListener('click', (event) => {
       if (event.target.classList.contains('suggestion-item')) {
-        const index = parseInt(event.target.dataset.index);
-        const food = currentSuggestions[index];
-        selectSuggestion(food);
+        if (event.target.classList.contains('custom-option')) {
+          // Switch to custom food tab
+          document.getElementById('tab-custom-food').click();
+          suggestionsDiv.style.display = 'none';
+        } else {
+          const index = parseInt(event.target.dataset.index);
+          const food = currentSuggestions[index];
+          selectSuggestion(food);
+        }
       }
     });
 
@@ -751,6 +762,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetPanel = document.getElementById(`panel-${targetTab}`);
         if (targetPanel) {
           targetPanel.style.display = 'flex';
+          targetPanel.classList.add('active');
+        }
+      });
+    });
+  }
+
+
+  /**
+   * setupSocialTabs — makes the social tab buttons work.
+   * Clicking a tab shows the corresponding panel (Feed or Communities).
+   */
+  function setupSocialTabs() {
+    const tabButtons = document.querySelectorAll('.social-tab-btn');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.dataset.tab;
+
+        // Update tab button states
+        tabButtons.forEach(btn => {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-selected', 'false');
+        });
+
+        button.classList.add('active');
+        button.setAttribute('aria-selected', 'true');
+
+        // Show the correct panel
+        document.querySelectorAll('.social-panel').forEach(panel => {
+          panel.style.display = 'none';
+          panel.classList.remove('active');
+        });
+
+        const targetPanel = document.getElementById(`panel-${targetTab}`);
+        if (targetPanel) {
+          targetPanel.style.display = 'block';
           targetPanel.classList.add('active');
         }
       });
@@ -1529,6 +1576,75 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
+   * setupStartWorkoutModal — wires up the start workout modal form.
+   * When the user submits, it logs all exercises from the routine.
+   */
+  function setupStartWorkoutModal() {
+    const modal = document.getElementById('start-workout-modal');
+    const form = document.getElementById('start-workout-form');
+    const closeBtn = document.getElementById('start-workout-close');
+    const msgEl = document.getElementById('start-workout-message');
+
+    // Close modal
+    closeBtn.addEventListener('click', () => {
+      modal.close();
+    });
+
+    // Form submission — log all exercises in the routine
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const routineId = document.getElementById('routine-id-field').value;
+
+      try {
+        const response = await fetch(`/api/routines/${routineId}`);
+        const routine = await response.json();
+
+        if (!routine.exercises || routine.exercises.length === 0) {
+          showMessage(msgEl, 'No exercises in this routine to log.', 'error');
+          return;
+        }
+
+        // Log each exercise in the routine
+        let successCount = 0;
+        for (const exercise of routine.exercises) {
+          const exerciseData = {
+            activity_type: exercise.exercise_name || exercise.custom_exercise,
+            activity_name: exercise.exercise_name || exercise.custom_exercise,
+            exercise_category: 'strength', // Assuming routine exercises are strength-based
+            sets: exercise.sets,
+            reps: parseInt(exercise.reps) || exercise.reps,
+            rest_seconds: exercise.rest_seconds,
+            exercise_id: exercise.exercise_id,
+            routine_id: routineId
+          };
+
+          const logResponse = await fetch('/api/exercise/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(exerciseData)
+          });
+
+          if (logResponse.ok) {
+            successCount++;
+          }
+        }
+
+        showMessage(msgEl, `Successfully logged ${successCount}/${routine.exercises.length} exercises!`, 'success');
+        modal.close();
+
+        // Reload exercise history and switch to exercise tab
+        loadExerciseHistory();
+        document.querySelector('[data-section="exercise"]').click();
+
+      } catch (error) {
+        console.error('Start workout error:', error.message);
+        showMessage(msgEl, 'Error logging exercises. Please try again.', 'error');
+      }
+    });
+  }
+
+  /**
    * loadWorkoutRoutines — fetches workout routines and renders them.
    * Separates private and public routines into different sections.
    */
@@ -2157,13 +2273,50 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.viewRoutine = function(id) {
-    console.log('View routine:', id);
-    // TODO: Implement routine viewer
+    // Fetch routine details and show them
+    fetch(`/api/routines/${id}`)
+      .then(res => res.json())
+      .then(routine => {
+        // Show routine details in a modal or overlay
+        alert(`Routine: ${routine.name}\n\nDescription: ${routine.description || 'No description'}\n\nDifficulty: ${routine.difficulty}\n\nEstimated Time: ${routine.estimated_time || 'N/A'} min\n\nExercises: ${routine.exercises?.length || 0}`);
+      })
+      .catch(err => console.error('Failed to view routine:', err));
   };
 
   window.startRoutine = function(id) {
-    console.log('Start routine:', id);
-    // TODO: Implement workout starter
+    // Fetch routine details and show modal with exercises
+    fetch(`/api/routines/${id}`)
+      .then(res => res.json())
+      .then(routine => {
+        // Populate the start workout modal
+        const modal = document.getElementById('start-workout-modal');
+        const exercisesList = document.getElementById('start-routine-exercises');
+        const routineNameEl = document.getElementById('start-routine-name');
+        const routineIdField = document.getElementById('routine-id-field');
+
+        routineNameEl.textContent = routine.name;
+        routineIdField.value = id;
+
+        // List all exercises in the routine
+        if (routine.exercises && routine.exercises.length > 0) {
+          exercisesList.innerHTML = routine.exercises
+            .map(ex => `
+              <div class="routine-exercise-item">
+                <strong>${ex.exercise_name || ex.custom_exercise}</strong>
+                <span>${ex.sets}x${ex.reps} - Rest: ${ex.rest_seconds}s</span>
+                ${ex.notes ? `<p class="exercise-notes">${ex.notes}</p>` : ''}
+              </div>
+            `).join('');
+        } else {
+          exercisesList.innerHTML = '<div class="empty-state">No exercises in this routine.</div>';
+        }
+
+        modal.showModal();
+      })
+      .catch(err => {
+        console.error('Failed to start routine:', err);
+        alert('Failed to load routine details.');
+      });
   };
 
   window.likePost = function(id) {

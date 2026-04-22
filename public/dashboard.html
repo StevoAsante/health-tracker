@@ -945,6 +945,29 @@
       </form>
     </dialog>
 
+    <!-- ── START WORKOUT MODAL ──────────────────────────── -->
+    <dialog id="start-workout-modal" class="modal-backdrop">
+      <form id="start-workout-form" class="modal-content" novalidate>
+        <h3 class="modal-title">Start Workout: <span id="start-routine-name"></span></h3>
+        
+        <input type="hidden" id="routine-id-field" />
+
+        <div class="form-group">
+          <label>Exercises in this routine:</label>
+          <div id="start-routine-exercises" class="routine-exercises-list">
+            <div class="empty-state">Loading exercises...</div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Start Workout</button>
+          <button type="button" class="btn btn-secondary" id="start-workout-close">Cancel</button>
+        </div>
+
+        <p class="form-message" id="start-workout-message" aria-live="polite"></p>
+      </form>
+    </dialog>
+
   </main>
 
   <!--
