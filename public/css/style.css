@@ -359,7 +359,47 @@ select {
   display: none;
 }
 
-/* ── DIET TABS ─────────────────────────────────────────── */
+/* ── SOCIAL TABS ────────────────────────────────────────── */
+.social-tabs {
+  display: flex;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: var(--space-lg);
+}
+
+.social-tab-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.social-tab-btn.active {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Social panels */
+.social-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.social-panel[style*="display: none"] {
+  display: none !important;
+}
+
+/* -- Diet tabs share the same styles as social tabs, so we can reuse those classes -- */
 .diet-tabs {
   display: flex;
   background-color: var(--bg-tertiary);
@@ -394,10 +434,10 @@ select {
   flex-direction: column;
   gap: var(--space-md);
 }
-
 .diet-panel[style*="display: none"] {
   display: none !important;
 }
+
 
 /* Food suggestions dropdown */
 .suggestions-dropdown {
@@ -897,6 +937,32 @@ select {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+/* ── MACRONUTRIENTS DISPLAY ───────────────────────────────── */
+.macronutrients-display {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin: var(--space-md) 0;
+}
+
+.macronutrients-display h4 {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.macronutrients-display .form-row {
+  margin-bottom: 0;
+}
+
+.macronutrients-display input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-weight: 600;
 }
 
 /* Invite code box shown after creating a group */

@@ -480,6 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (query.length < 1) {
           suggestionsDiv.style.display = 'none';
+          document.getElementById('macronutrients-display').style.display = 'none';
           return;
         }
 
@@ -549,6 +550,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function selectSuggestion(food) {
       foodInput.value = food.name;
       caloriesInput.value = food.calories;
+
+      // Show macronutrients if available
+      const macroDisplay = document.getElementById('macronutrients-display');
+      if (food.protein_g || food.carbs_g || food.fat_g || food.fibre_g) {
+        document.getElementById('diet-protein').value = food.protein_g ? `${food.protein_g}g` : '0g';
+        document.getElementById('diet-carbs').value = food.carbs_g ? `${food.carbs_g}g` : '0g';
+        document.getElementById('diet-fat').value = food.fat_g ? `${food.fat_g}g` : '0g';
+        document.getElementById('diet-fibre').value = food.fibre_g ? `${food.fibre_g}g` : '0g';
+        macroDisplay.style.display = 'block';
+      } else {
+        macroDisplay.style.display = 'none';
+      }
+
       suggestionsDiv.style.display = 'none';
       selectedIndex = -1;
       // Focus on the meal type select for better UX
@@ -1404,7 +1418,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
-        const response = await fetch('/api/routines/create', {
+        const response = await fetch('/api/routines', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(routineData)
@@ -2157,10 +2171,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Global functions for onclick handlers
   window.selectExercise = function(id, name) {
-    // Switch to exercise tab and pre-fill the form
+    // Switch to exercise tab
     document.querySelector('[data-section="exercise"]').click();
-    // This would need more implementation to actually select the exercise
-    console.log('Selected exercise:', id, name);
+
+    // Switch to strength category since library exercises are strength-based
+    document.getElementById('toggle-strength').click();
+
+    // Set the exercise in the dropdown
+    const select = document.getElementById('ex-exercise-select');
+    select.value = id;
+
+    // Set the hidden exercise_id field
+    document.getElementById('exercise-id').value = id;
+
+    // Pre-fill the activity name
+    document.getElementById('ex-name').value = name;
+
+    // Set activity type to match the exercise name
+    document.getElementById('ex-type').value = name;
   };
 
   window.viewRoutine = function(id) {
