@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupGroupForms();
   setupRoutinesForm();
   setupStartWorkoutModal();
+  populateActivityTypes('cardio'); // Initialize with cardio exercises since it's the default tab
 
   // ── STEP 5: LOGOUT BUTTON ───────────────────────────────
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -143,6 +144,100 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetSection === 'groups')    loadGroups();
       });
     });
+  }
+
+
+  // ============================================================
+  // SECTION: Exercise Activity Types
+  // ============================================================
+
+  /**
+   * populateActivityTypes — fetches all exercises from the database
+   * and populates the activity type dropdowns in the exercise form
+   * and edit exercise modal. Filters by category if specified.
+   */
+  async function populateActivityTypes(category = null) {
+    try {
+      const response = await fetch('/api/exercises');
+      const exercises = await response.json();
+
+      // Filter exercises by category if specified
+      let filteredExercises = exercises;
+      if (category) {
+        // Define cardio and strength exercise types
+        const cardioTypes = ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Elliptical', 'Stair Climber', 'Jump Rope', 'Burpees', 'Mountain Climbers', 'High Knees'];
+        const strengthTypes = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull Ups', 'Rows', 'Lunges', 'Dips', 'Push Ups', 'Planks', 'Bicep Curls', 'Tricep Extensions', 'Shoulder Raises', 'Lat Pulldowns', 'Leg Press', 'Calf Raises'];
+
+        if (category === 'cardio') {
+          filteredExercises = exercises.filter(ex =>
+            cardioTypes.some(type => ex.name.toLowerCase().includes(type.toLowerCase())) ||
+            ex.category === 'cardio'
+          );
+        } else if (category === 'strength') {
+          filteredExercises = exercises.filter(ex =>
+            strengthTypes.some(type => ex.name.toLowerCase().includes(type.toLowerCase())) ||
+            ex.category === 'strength'
+          );
+        }
+      }
+
+      // Get unique exercise names from filtered exercises
+      const exerciseNames = [...new Set(filteredExercises.map(ex => ex.name))];
+
+      // Always add "Custom" option at the end
+      if (!exerciseNames.includes('Custom')) {
+        exerciseNames.push('Custom');
+      }
+
+      // Update the main exercise form dropdown
+      const exTypeSelect = document.getElementById('ex-type');
+      exTypeSelect.innerHTML = '<option value="">Select type</option>';
+
+      exerciseNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        exTypeSelect.appendChild(option);
+      });
+
+      // Update the edit exercise modal dropdown
+      const editExTypeSelect = document.getElementById('edit-ex-type');
+      editExTypeSelect.innerHTML = '<option value="">Select type</option>';
+
+      exerciseNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        editExTypeSelect.appendChild(option);
+      });
+
+    } catch (error) {
+      console.error('Failed to load activity types:', error);
+      // Fallback to basic options if API fails
+      const fallbackOptions = category === 'cardio'
+        ? ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Custom']
+        : category === 'strength'
+        ? ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull Ups', 'Custom']
+        : ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull Ups', 'Custom'];
+
+      const exTypeSelect = document.getElementById('ex-type');
+      exTypeSelect.innerHTML = '<option value="">Select type</option>';
+      fallbackOptions.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        exTypeSelect.appendChild(option);
+      });
+
+      const editExTypeSelect = document.getElementById('edit-ex-type');
+      editExTypeSelect.innerHTML = '<option value="">Select type</option>';
+      fallbackOptions.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        editExTypeSelect.appendChild(option);
+      });
+    }
   }
 
 
@@ -302,6 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
       strengthBtn.classList.remove('active');
       cardioFields.hidden = false;
       strFields.hidden    = true;
+      // Update activity types for cardio exercises
+      populateActivityTypes('cardio');
     });
 
     // When they click "Strength", swap which fields are visible
@@ -311,6 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cardioBtn.classList.remove('active');
       strFields.hidden    = false;
       cardioFields.hidden = true;
+      // Update activity types for strength exercises
+      populateActivityTypes('strength');
     });
 
     // ── Form submission ─────────────────────────────────────
@@ -2297,14 +2396,36 @@ document.addEventListener('DOMContentLoaded', () => {
         routineNameEl.textContent = routine.name;
         routineIdField.value = id;
 
-        // List all exercises in the routine
+        // List all exercises in the routine with editable fields
         if (routine.exercises && routine.exercises.length > 0) {
           exercisesList.innerHTML = routine.exercises
-            .map(ex => `
-              <div class="routine-exercise-item">
-                <strong>${ex.exercise_name || ex.custom_exercise}</strong>
-                <span>${ex.sets}x${ex.reps} - Rest: ${ex.rest_seconds}s</span>
-                ${ex.notes ? `<p class="exercise-notes">${ex.notes}</p>` : ''}
+            .map((ex, index) => `
+              <div class="routine-exercise-item editable" data-index="${index}">
+                <h4>${ex.exercise_name || ex.custom_exercise}</h4>
+                <div class="exercise-edit-fields">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Sets</label>
+                      <input type="number" class="exercise-sets" min="1" max="10" value="${ex.sets || 3}" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Reps</label>
+                      <input type="text" class="exercise-reps" placeholder="10" value="${ex.reps || '10'}" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Weight (kg)</label>
+                      <input type="number" class="exercise-weight" min="0" step="0.5" placeholder="60.0">
+                    </div>
+                    <div class="form-group">
+                      <label>RPE (1-10)</label>
+                      <input type="number" class="exercise-rpe" min="1" max="10" placeholder="7">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Notes</label>
+                    <textarea class="exercise-notes" rows="2" placeholder="How did it feel?">${ex.notes || ''}</textarea>
+                  </div>
+                </div>
               </div>
             `).join('');
         } else {
@@ -2328,5 +2449,78 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Comment on post:', id);
     // TODO: Implement commenting
   };
+
+  // Setup start workout modal form submission
+  function setupStartWorkoutModal() {
+    const form = document.getElementById('start-workout-form');
+    const modal = document.getElementById('start-workout-modal');
+    const messageEl = document.getElementById('start-workout-message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const routineId = document.getElementById('routine-id-field').value;
+      const exerciseItems = document.querySelectorAll('#start-routine-exercises .routine-exercise-item');
+
+      const workoutData = {
+        routine_id: routineId,
+        exercises: []
+      };
+
+      // Collect edited exercise data
+      exerciseItems.forEach((item, index) => {
+        const sets = item.querySelector('.exercise-sets').value;
+        const reps = item.querySelector('.exercise-reps').value;
+        const weight = item.querySelector('.exercise-weight').value;
+        const rpe = item.querySelector('.exercise-rpe').value;
+        const notes = item.querySelector('.exercise-notes').value;
+
+        if (sets && reps) {
+          workoutData.exercises.push({
+            index: index,
+            sets: parseInt(sets),
+            reps: reps,
+            weight: weight ? parseFloat(weight) : null,
+            rpe: rpe ? parseInt(rpe) : null,
+            notes: notes || null
+          });
+        }
+      });
+
+      try {
+        const response = await fetch('/api/workouts/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(workoutData)
+        });
+
+        if (response.ok) {
+          messageEl.textContent = 'Workout started successfully!';
+          messageEl.className = 'form-message success';
+          modal.close();
+          // Refresh the dashboard or navigate to workout tracking
+          loadDashboard();
+        } else {
+          const error = await response.json();
+          messageEl.textContent = error.message || 'Failed to start workout.';
+          messageEl.className = 'form-message error';
+        }
+      } catch (error) {
+        console.error('Error starting workout:', error);
+        messageEl.textContent = 'An error occurred while starting the workout.';
+        messageEl.className = 'form-message error';
+      }
+    });
+
+    // Close modal handler
+    document.getElementById('start-workout-close').addEventListener('click', () => {
+      modal.close();
+    });
+  }
+
+  // Initialize the start workout modal
+  setupStartWorkoutModal();
 
 }); // End of DOMContentLoaded

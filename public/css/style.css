@@ -1360,6 +1360,110 @@ dialog::backdrop {
   border-color: var(--accent);
 }
 
+/* ── SOCIAL TABS ─────────────────────────────────────────── */
+.social-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.social-tab-btn {
+  background: transparent;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.social-tab-btn:hover {
+  color: var(--accent);
+  background-color: var(--bg-tertiary);
+}
+
+.social-tab-btn.active {
+  color: var(--accent);
+  background-color: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent);
+}
+
+.social-panel {
+  display: none;
+}
+
+.social-panel.active {
+  display: block;
+}
+
+/* ── EXERCISE TABS ───────────────────────────────────────── */
+.exercise-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.exercise-tab-btn {
+  background: transparent;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.exercise-tab-btn:hover {
+  color: var(--accent);
+  background-color: var(--bg-tertiary);
+}
+
+.exercise-tab-btn.active {
+  color: var(--accent);
+  background-color: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── EXERCISE TABS ───────────────────────────────────────── */
+.exercise-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.exercise-tab-btn {
+  background: transparent;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.exercise-tab-btn:hover {
+  color: var(--accent);
+  background-color: var(--bg-tertiary);
+}
+
+.exercise-tab-btn.active {
+  color: var(--accent);
+  background-color: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent);
+}
+
 /* ── RESPONSIVE DESIGN FOR NEW SECTIONS ────────────────── */
 @media (max-width: 768px) {
   .exercise-grid,
@@ -1440,4 +1544,62 @@ dialog::backdrop {
 .suggestion-item.custom-option {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* ── EDITABLE EXERCISE FIELDS (for start routine modal) ──── */
+.routine-exercise-item.editable {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.routine-exercise-item.editable h4 {
+  margin: 0 0 var(--space-md) 0;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.exercise-edit-fields {
+  width: 100%;
+}
+
+.exercise-edit-fields .form-row {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.exercise-edit-fields .form-row .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-edit-fields .form-group label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.exercise-edit-fields input,
+.exercise-edit-fields textarea {
+  width: 100%;
+  padding: var(--space-sm);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.exercise-edit-fields input:focus,
+.exercise-edit-fields textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.exercise-edit-fields textarea {
+  resize: vertical;
+  min-height: 60px;
 }

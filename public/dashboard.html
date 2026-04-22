@@ -102,11 +102,11 @@
 
       <div class="dashboard-card">
         <!-- Category toggle: Cardio or Strength -->
-        <div class="category-toggle" role="group" aria-label="Exercise category">
-          <button class="toggle-btn active" data-category="cardio" id="toggle-cardio">
+        <div class="exercise-tabs" role="group" aria-label="Exercise category">
+          <button class="exercise-tab-btn active" data-category="cardio" id="toggle-cardio">
             Cardio
           </button>
-          <button class="toggle-btn" data-category="strength" id="toggle-strength">
+          <button class="exercise-tab-btn" data-category="strength" id="toggle-strength">
             Strength
           </button>
         </div>
@@ -953,7 +953,7 @@
         <input type="hidden" id="routine-id-field" />
 
         <div class="form-group">
-          <label>Exercises in this routine:</label>
+          <label>Exercises in this routine (edit details before starting):</label>
           <div id="start-routine-exercises" class="routine-exercises-list">
             <div class="empty-state">Loading exercises...</div>
           </div>
