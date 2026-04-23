@@ -152,18 +152,18 @@ router.get('/list', requireLogin, async (req, res) => {
 });
 
 // ── PUT /api/goals/:id ───────────────────────────────────
-// Updates the current_value of a goal (tracking progress).
+// Updates a goal. Can update progress (current_value) or full goal details.
 // :id is a URL parameter — e.g. PUT /api/goals/5 updates goal with id=5
 router.put('/:id', requireLogin, async (req, res) => {
-  const goalId       = parseInt(req.params.id);
-  const { current_value } = req.body;
+  const goalId = parseInt(req.params.id);
+  const { current_value, goal_type, target_value, description, target_date } = req.body;
 
-  if (isNaN(goalId) || current_value === undefined) {
-    return res.status(400).json({ error: 'Valid goal ID and current value are required.' });
+  if (isNaN(goalId)) {
+    return res.status(400).json({ error: 'Valid goal ID is required.' });
   }
 
   try {
-    // Fetch the goal first to check ownership and get the target
+    // Fetch the goal first to check ownership
     const goalResult = await db.query(
       'SELECT * FROM goals WHERE id = $1 AND user_id = $2',
       [goalId, req.session.userId]
@@ -175,23 +175,78 @@ router.put('/:id', requireLogin, async (req, res) => {
 
     const goal = goalResult.rows[0];
 
-    // Check if the goal has now been met
-    // (current value has reached or passed the target value)
-    const isNowMet = Number(current_value) >= Number(goal.target_value);
+    // If only current_value is provided, it's a progress update
+    if (current_value !== undefined && !goal_type && !target_value && !description && target_date === undefined) {
+      // Check if the goal has now been met
+      const isNowMet = Number(current_value) >= Number(goal.target_value);
 
-    // Update the goal's progress (and mark as met if applicable)
+      // Update the goal's progress
+      const updateResult = await db.query(
+        `UPDATE goals
+         SET current_value = $1, is_met = $2
+         WHERE id = $3 AND user_id = $4
+         RETURNING *`,
+        [current_value, isNowMet, goalId, req.session.userId]
+      );
+
+      return res.status(200).json({
+        message: isNowMet ? '🎉 Goal achieved! Great work!' : 'Progress updated!',
+        goal: updateResult.rows[0],
+        goal_met: isNowMet
+      });
+    }
+
+    // Otherwise, it's a full goal update
+    const targetValue = target_value !== undefined ? Number(target_value) : goal.target_value;
+    const config = goal_type ? getGoalTargetConfig(goal_type) : getGoalTargetConfig(goal.goal_type);
+
+    if (target_value !== undefined && (targetValue <= 0 || targetValue < config.min || targetValue > config.max)) {
+      return res.status(400).json({ error: `Target value must be between ${config.min} and ${config.max}.` });
+    }
+
+    if ((goal_type || goal.goal_type) && config.requiresDate && !target_date && target_date !== null) {
+      return res.status(400).json({ error: 'Target date is required for this goal type.' });
+    }
+
+    // Update the goal
+    const updateFields = [];
+    const updateValues = [];
+    let paramCount = 1;
+
+    if (goal_type !== undefined) {
+      updateFields.push(`goal_type = $${paramCount++}`);
+      updateValues.push(goal_type);
+    }
+    if (target_value !== undefined) {
+      updateFields.push(`target_value = $${paramCount++}`);
+      updateValues.push(targetValue);
+    }
+    if (description !== undefined) {
+      updateFields.push(`description = $${paramCount++}`);
+      updateValues.push(description || null);
+    }
+    if (target_date !== undefined) {
+      updateFields.push(`target_date = $${paramCount++}`);
+      updateValues.push(config.requiresDate ? target_date : null);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update.' });
+    }
+
+    updateValues.push(goalId, req.session.userId);
+
     const updateResult = await db.query(
       `UPDATE goals
-       SET current_value = $1, is_met = $2
-       WHERE id = $3 AND user_id = $4
+       SET ${updateFields.join(', ')}
+       WHERE id = $${paramCount} AND user_id = $${paramCount + 1}
        RETURNING *`,
-      [current_value, isNowMet, goalId, req.session.userId]
+      updateValues
     );
 
     return res.status(200).json({
-      message: isNowMet ? '🎉 Goal achieved! Great work!' : 'Progress updated!',
-      goal: updateResult.rows[0],
-      goal_met: isNowMet
+      message: 'Goal updated successfully!',
+      goal: updateResult.rows[0]
     });
 
   } catch (error) {

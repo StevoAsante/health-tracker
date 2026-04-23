@@ -147,16 +147,31 @@ router.get('/foods', requireLogin, async (req, res) => {
   const search = req.query.search || '';
 
   try {
-    // ILIKE is PostgreSQL's case-insensitive version of LIKE.
-    // %${search}% means "contains this text anywhere".
-    const result = await db.query(
-      `SELECT * FROM food_items
-       WHERE (name ILIKE $1 OR is_custom = false)
-         AND (created_by IS NULL OR created_by = $2)
-       ORDER BY is_custom ASC, name ASC
-       LIMIT 20`,
-      [`%${search}%`, req.session.userId]
-    );
+    let query;
+    let params;
+
+    if (search.trim()) {
+      // If there's a search term, only return foods that match the search
+      query = `
+        SELECT * FROM food_items
+        WHERE (name ILIKE $1)
+          AND (created_by IS NULL OR created_by = $2)
+        ORDER BY is_custom ASC, name ASC
+        LIMIT 20
+      `;
+      params = [`%${search}%`, req.session.userId];
+    } else {
+      // If no search term, return all foods (both default and user's custom)
+      query = `
+        SELECT * FROM food_items
+        WHERE created_by IS NULL OR created_by = $1
+        ORDER BY is_custom ASC, name ASC
+        LIMIT 50
+      `;
+      params = [req.session.userId];
+    }
+
+    const result = await db.query(query, params);
 
     return res.status(200).json({ foods: result.rows });
 

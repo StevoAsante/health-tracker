@@ -980,6 +980,29 @@ select {
   border-left: 3px solid var(--error);
 }
 
+/* Goal actions (edit/delete buttons) */
+.goal-actions {
+  display: flex;
+  gap: var(--space-xs);
+  align-self: flex-end;
+}
+
+.btn-small {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.8rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+  background-color: var(--accent);
+  color: var(--bg-primary);
+}
+
 /* Progress bar inside goal items */
 .progress-bar {
   height: 6px;

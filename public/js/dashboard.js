@@ -1068,6 +1068,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Store chart instances to destroy them before creating new ones
+  let chartInstances = {};
+
   /**
    * renderCaloriesBurnedGauge — renders a doughnut chart for calories burned
    */
@@ -1075,9 +1078,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('chart-calories-burned');
     if (!ctx) return;
 
+    // Destroy existing chart if it exists
+    if (chartInstances['calories-burned']) {
+      chartInstances['calories-burned'].destroy();
+    }
+
     const percentage = Math.min((current / target) * 100, 100);
 
-    new Chart(ctx, {
+    chartInstances['calories-burned'] = new Chart(ctx, {
       type: 'doughnut',
       data: {
         datasets: [
@@ -1107,9 +1115,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('chart-sessions');
     if (!ctx) return;
 
+    // Destroy existing chart if it exists
+    if (chartInstances['sessions']) {
+      chartInstances['sessions'].destroy();
+    }
+
     const percentage = Math.min((current / target) * 100, 100);
 
-    new Chart(ctx, {
+    chartInstances['sessions'] = new Chart(ctx, {
       type: 'doughnut',
       data: {
         datasets: [
@@ -1139,9 +1152,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('chart-calories-consumed');
     if (!ctx) return;
 
+    // Destroy existing chart if it exists
+    if (chartInstances['calories-consumed']) {
+      chartInstances['calories-consumed'].destroy();
+    }
+
     const percentage = Math.min((current / target) * 100, 100);
 
-    new Chart(ctx, {
+    chartInstances['calories-consumed'] = new Chart(ctx, {
       type: 'doughnut',
       data: {
         datasets: [
@@ -1171,9 +1189,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('chart-workout-time');
     if (!ctx) return;
 
+    // Destroy existing chart if it exists
+    if (chartInstances['workout-time']) {
+      chartInstances['workout-time'].destroy();
+    }
+
     const percentage = Math.min((current / target) * 100, 100);
 
-    new Chart(ctx, {
+    chartInstances['workout-time'] = new Chart(ctx, {
       type: 'doughnut',
       data: {
         datasets: [
@@ -1203,11 +1226,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('chart-weekly-activity');
     if (!ctx) return;
 
+    // Destroy existing chart if it exists
+    if (chartInstances['weekly-activity']) {
+      chartInstances['weekly-activity'].destroy();
+    }
+
     // Sample data — in production this would come from the API
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dailyCalories = [400, 550, 600, 480, 720, 650, 500]; // Sample data
 
-    new Chart(ctx, {
+    chartInstances['weekly-activity'] = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: daysOfWeek,
@@ -1414,10 +1442,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentLabel = current > 0 ? `${current} / ${target} ${goal.unit || ''}`.trim() : `0 / ${target} ${goal.unit || ''}`.trim();
 
       return `
-        <li class="goal-item ${statusClass}">
+        <li class="goal-item ${statusClass}" data-goal-id="${goal.id}">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <strong>${goal.description || getGoalTypeLabel(goal.goal_type)}</strong>
-            <span class="activity-tag">${statusText}</span>
+            <div class="goal-actions">
+              <button class="btn-small edit-goal-btn" data-goal-id="${goal.id}" title="Edit goal">✏️</button>
+              <button class="btn-small delete-goal-btn" data-goal-id="${goal.id}" title="Delete goal">🗑️</button>
+            </div>
           </div>
           ${goal.description ? `<p style="color:var(--text-secondary); font-size:0.9rem;">${goal.description}</p>` : ''}
           <p style="color:var(--text-muted); font-size:0.85rem;">
@@ -1428,6 +1459,102 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </li>`;
     }).join('');
+
+    // Add event listeners for edit and delete buttons
+    list.addEventListener('click', handleGoalAction);
+  }
+
+  function handleGoalAction(event) {
+    const target = event.target;
+    const goalId = target.dataset.goalId;
+
+    if (!goalId) return;
+
+    if (target.classList.contains('edit-goal-btn')) {
+      editGoal(goalId);
+    } else if (target.classList.contains('delete-goal-btn')) {
+      deleteGoal(goalId);
+    }
+  }
+
+  async function editGoal(goalId) {
+    try {
+      // Fetch current goal data
+      const response = await fetch('/api/goals/list');
+      const data = await response.json();
+      const goal = data.goals.find(g => g.id == goalId);
+
+      if (!goal) {
+        alert('Goal not found');
+        return;
+      }
+
+      // Populate the form with current goal data
+      const form = document.getElementById('stats-goal-form');
+      const typeInput = document.getElementById('stats-goal-type');
+      const targetInput = document.getElementById('stats-goal-target');
+      const dateInput = document.getElementById('stats-goal-date');
+      const descInput = document.getElementById('stats-goal-description');
+
+      typeInput.value = goal.goal_type;
+      targetInput.value = goal.target_value;
+      descInput.value = goal.description || '';
+
+      if (goal.target_date) {
+        dateInput.value = goal.target_date.split('T')[0];
+      }
+
+      // Update form fields based on goal type
+      const config = getGoalTargetConfig(goal.goal_type);
+      targetInput.min = config.min;
+      targetInput.max = config.max;
+      targetInput.step = config.step;
+      targetInput.placeholder = config.placeholder;
+
+      const dateGroup = dateInput.closest('.form-group');
+      if (config.showDate) {
+        dateGroup.style.display = 'block';
+        dateInput.required = true;
+      } else {
+        dateGroup.style.display = 'none';
+        dateInput.required = false;
+      }
+
+      // Change submit button text and add data attribute for editing
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.textContent = 'Update Goal';
+      form.dataset.editingGoalId = goalId;
+
+      // Scroll to form
+      form.scrollIntoView({ behavior: 'smooth' });
+      typeInput.focus();
+
+    } catch (error) {
+      console.error('Error loading goal for editing:', error);
+      alert('Failed to load goal for editing');
+    }
+  }
+
+  async function deleteGoal(goalId) {
+    if (!confirm('Are you sure you want to delete this goal? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/goals/${goalId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        loadStats(); // Refresh the stats page
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete goal');
+      }
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      alert('Failed to delete goal');
+    }
   }
 
   function renderStatsRecordsPreview(records) {
@@ -1609,6 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const target_date  = formData.get('target_date');
       const description  = formData.get('description') || null;
       const config       = getGoalTargetConfig(goal_type);
+      const editingGoalId = form.dataset.editingGoalId;
 
       if (!goal_type || !formData.get('target_value')) {
         showMessage(msgEl, 'Goal type and target value are required.', 'error');
@@ -1625,35 +1753,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      setLoading(submitBtn, true, 'Saving goal...');
+      setLoading(submitBtn, true, editingGoalId ? 'Updating goal...' : 'Saving goal...');
       clearMessage(msgEl);
 
       const payload = { goal_type, target_value, description };
       if (config.showDate) payload.target_date = target_date;
 
       try {
-        const response = await fetch('/api/goals/create', {
-          method:  'POST',
+        const url = editingGoalId ? `/api/goals/${editingGoalId}` : '/api/goals/create';
+        const method = editingGoalId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(payload)
+          body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (response.ok) {
-          showMessage(msgEl, 'Goal set! Refreshing stats...', 'success');
+          showMessage(msgEl, editingGoalId ? 'Goal updated!' : 'Goal set! Refreshing stats...', 'success');
           form.reset();
           updateGoalFields();
+          delete form.dataset.editingGoalId; // Clear editing state
+          submitBtn.textContent = 'Set Goal'; // Reset button text
           loadStats();
         } else {
-          showMessage(msgEl, data.error || 'Failed to create goal.', 'error');
+          showMessage(msgEl, data.error || (editingGoalId ? 'Failed to update goal.' : 'Failed to create goal.'), 'error');
         }
 
       } catch (error) {
-        console.error('Goal create error:', error.message);
+        console.error('Goal submit error:', error.message);
         showMessage(msgEl, 'Network error. Please try again.', 'error');
       } finally {
-        setLoading(submitBtn, false, 'Set Goal');
+        setLoading(submitBtn, false, editingGoalId ? 'Update Goal' : 'Set Goal');
       }
     });
   }

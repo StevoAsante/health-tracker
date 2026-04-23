@@ -58,19 +58,45 @@ router.post('/start', requireLogin, async (req, res) => {
       const activityName = source.exercise_name || source.custom_exercise || 'Routine Exercise';
       const activityType = source.muscle_group || 'Strength';
 
-      return {
-        activity_type: activityType,
-        activity_name: activityName,
-        exercise_category: 'strength',
-        sets: exercise.sets || source.sets || null,
-        reps: exercise.reps || source.reps || null,
-        weight_kg_used: exercise.weight || null,
-        calories_burned: null,
-        rpe: exercise.rpe || null,
-        notes: exercise.notes || source.notes || null,
-        exercise_id: source.exercise_id || null,
-        routine_id: routine_id
-      };
+      // Determine exercise category based on the activity type
+      // Cardio exercises typically include running, cycling, swimming, etc.
+      const cardioKeywords = ['run', 'running', 'cycle', 'cycling', 'swim', 'swimming', 'cardio', 'aerobic'];
+      const isCardio = cardioKeywords.some(keyword =>
+        activityName.toLowerCase().includes(keyword) ||
+        activityType.toLowerCase().includes(keyword)
+      );
+
+      const exerciseCategory = isCardio ? 'cardio' : 'strength';
+
+      // For cardio exercises, use the provided cardio fields
+      if (exerciseCategory === 'cardio') {
+        return {
+          activity_type: activityType,
+          activity_name: activityName,
+          exercise_category: 'cardio',
+          duration_mins: exercise.duration || null,
+          distance_km: exercise.distance || null,
+          calories_burned: exercise.calories || null,
+          notes: exercise.notes || source.notes || null,
+          exercise_id: source.exercise_id || null,
+          routine_id: routine_id
+        };
+      } else {
+        // For strength exercises, use the traditional fields
+        return {
+          activity_type: activityType,
+          activity_name: activityName,
+          exercise_category: 'strength',
+          sets: exercise.sets || source.sets || null,
+          reps: exercise.reps || source.reps || null,
+          weight_kg_used: exercise.weight || null,
+          calories_burned: null,
+          rpe: exercise.rpe || null,
+          notes: exercise.notes || source.notes || null,
+          exercise_id: source.exercise_id || null,
+          routine_id: routine_id
+        };
+      }
     });
 
     if (entries.length === 0) {
@@ -90,8 +116,8 @@ router.post('/start', requireLogin, async (req, res) => {
           entry.activity_type,
           entry.activity_name,
           entry.exercise_category,
-          null,
-          null,
+          entry.duration_mins,
+          entry.distance_km,
           entry.sets,
           entry.reps,
           entry.weight_kg_used,
