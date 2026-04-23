@@ -697,6 +697,80 @@ select {
   color: var(--text-secondary);
 }
 
+/* ── OVERVIEW HEADER ─────────────────────────────────────── */
+.overview-header {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.overview-header .section-heading {
+  font-size: 2.2rem;
+  margin-bottom: var(--space-sm);
+  color: var(--accent);
+}
+
+.motivation-quote {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── OVERVIEW CONTENT GRID ───────────────────────────────── */
+.overview-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+  .overview-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── FILTER BUTTONS ─────────────────────────────────────── */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-btn {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-light);
+}
+
+.filter-btn.active {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* ── ACTIVITY DATE ──────────────────────────────────────── */
+.activity-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: var(--space-sm);
+}
+
 /* ── VISUAL STATS GAUGES ──────────────────────────────────── */
 /* Circular progress gauges with Chart.js for stats */
 .stats-grid-visual {

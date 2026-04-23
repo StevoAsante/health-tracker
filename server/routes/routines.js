@@ -117,6 +117,25 @@ router.post('/', async (req, res) => {
     if (exercises && exercises.length > 0) {
       for (let i = 0; i < exercises.length; i++) {
         const exercise = exercises[i];
+        let sets = exercise.sets;
+        let reps = exercise.reps;
+        let rest_seconds = exercise.rest_seconds || 90;
+        let notes = exercise.notes || null;
+
+        // If this is a cardio exercise, store cardio params in notes as JSON
+        if (exercise.duration_mins || exercise.distance_km || exercise.calories_burned) {
+          const cardioData = {
+            duration_mins: exercise.duration_mins,
+            distance_km: exercise.distance_km,
+            calories_burned: exercise.calories_burned
+          };
+          notes = JSON.stringify(cardioData);
+          // Set strength fields to null for cardio exercises
+          sets = null;
+          reps = null;
+          rest_seconds = null;
+        }
+
         const exerciseQuery = `
           INSERT INTO routine_exercises (routine_id, exercise_id, custom_exercise, sets, reps, rest_seconds, notes, order_position)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -126,10 +145,10 @@ router.post('/', async (req, res) => {
           routine.id,
           exercise.exercise_id || null,
           exercise.custom_exercise || null,
-          exercise.sets,
-          exercise.reps,
-          exercise.rest_seconds || 90,
-          exercise.notes || null,
+          sets,
+          reps,
+          rest_seconds,
+          notes,
           i + 1
         ]);
       }

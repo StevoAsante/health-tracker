@@ -51,22 +51,25 @@
 
     <!-- ── OVERVIEW SECTION ──────────────────────────── -->
     <section id="section-overview" class="dash-section active" aria-label="Overview">
-      <h2 class="section-heading">Today's Overview</h2>
+      <div class="overview-header">
+        <h2 class="section-heading" id="overview-greeting">Welcome back!</h2>
+        <p class="motivation-quote" id="overview-motivation">Every workout counts towards your goals!</p>
+      </div>
 
       <!-- Summary stat cards — data filled by dashboard.js -->
       <div class="stats-grid">
-        <article class="stat-card" aria-label="Calories burned today">
+        <article class="stat-card" aria-label="Calories burned all time">
           <p class="stat-label">Calories Burned</p>
           <p class="stat-value" id="overview-cal-burned">—</p>
           <p class="stat-unit">kcal</p>
         </article>
-        <article class="stat-card" aria-label="Calories consumed today">
+        <article class="stat-card" aria-label="Calories consumed all time">
           <p class="stat-label">Calories Consumed</p>
           <p class="stat-value" id="overview-cal-consumed">—</p>
           <p class="stat-unit">kcal</p>
         </article>
-        <article class="stat-card" aria-label="Exercise sessions today">
-          <p class="stat-label">Sessions Today</p>
+        <article class="stat-card" aria-label="Exercise sessions all time">
+          <p class="stat-label">Total Sessions</p>
           <p class="stat-value" id="overview-sessions">—</p>
           <p class="stat-unit">logged</p>
         </article>
@@ -77,20 +80,25 @@
         </article>
       </div>
 
-      <!-- Recent exercise list for today -->
-      <div class="dashboard-card">
-        <h3 class="card-heading">Today's Exercise</h3>
-        <ul id="overview-exercise-list" class="activity-list" aria-label="Today's exercise entries">
-          <li class="empty-state">No exercise logged yet — get moving!</li>
-        </ul>
-      </div>
+      <!-- Side-by-side exercise and meals -->
+      <div class="overview-content-grid">
+        <!-- Recent exercise list -->
+        <div class="dashboard-card">
+          <h3 class="card-heading">Your Workouts</h3>
+          <div id="exercise-filter-buttons" class="filter-buttons-container"></div>
+          <ul id="overview-exercise-list" class="activity-list" aria-label="Exercise history">
+            <li class="empty-state">No exercise logged yet — get moving!</li>
+          </ul>
+        </div>
 
-      <!-- Today's meals -->
-      <div class="dashboard-card">
-        <h3 class="card-heading">Today's Meals</h3>
-        <ul id="overview-meal-list" class="activity-list" aria-label="Today's meal entries">
-          <li class="empty-state">No meals logged yet.</li>
-        </ul>
+        <!-- Meals history -->
+        <div class="dashboard-card">
+          <h3 class="card-heading">Your Meals</h3>
+          <div id="meal-filter-buttons" class="filter-buttons-container"></div>
+          <ul id="overview-meal-list" class="activity-list" aria-label="Meal history">
+            <li class="empty-state">No meals logged yet.</li>
+          </ul>
+        </div>
       </div>
     </section>
 

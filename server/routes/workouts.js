@@ -66,18 +66,29 @@ router.post('/start', requireLogin, async (req, res) => {
         activityType.toLowerCase().includes(keyword)
       );
 
-      const exerciseCategory = isCardio ? 'cardio' : 'strength';
+      // Check if cardio parameters are stored in notes as JSON
+      let cardioParams = null;
+      if (source.notes && source.notes.startsWith('{')) {
+        try {
+          cardioParams = JSON.parse(source.notes);
+          // If we successfully parsed cardio params, this is a cardio exercise
+        } catch (e) {
+          // Not JSON, treat as regular notes
+        }
+      }
 
-      // For cardio exercises, use the provided cardio fields
+      const exerciseCategory = (isCardio || cardioParams) ? 'cardio' : 'strength';
+
+      // For cardio exercises, use the provided cardio fields or stored params
       if (exerciseCategory === 'cardio') {
         return {
           activity_type: activityType,
           activity_name: activityName,
           exercise_category: 'cardio',
-          duration_mins: exercise.duration || null,
-          distance_km: exercise.distance || null,
-          calories_burned: exercise.calories || null,
-          notes: exercise.notes || source.notes || null,
+          duration_mins: exercise.duration || cardioParams?.duration_mins || null,
+          distance_km: exercise.distance || cardioParams?.distance_km || null,
+          calories_burned: exercise.calories || cardioParams?.calories_burned || null,
+          notes: exercise.notes || (!cardioParams ? source.notes : null) || null,
           exercise_id: source.exercise_id || null,
           routine_id: routine_id
         };

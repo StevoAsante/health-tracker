@@ -241,92 +241,49 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function loadOverview() {
     try {
-      // Run all three fetch requests at the same time using Promise.all
-      // This is faster than doing them one after another
-      // Promise.all waits for ALL of them to finish before continuing
-      const [exerciseRes, dietRes, goalsRes] = await Promise.all([
-        fetch('/api/exercise/today'),
-        fetch('/api/diet/today'),
-        fetch('/api/goals/list')
+      const [exerciseRes, dietRes, goalsRes, userRes] = await Promise.all([
+        fetch('/api/exercise/history'),
+        fetch('/api/diet/history'),
+        fetch('/api/goals/list'),
+        fetch('/api/auth/me')
       ]);
 
-      const exerciseData = await exerciseRes.json();
-      const dietData     = await dietRes.json();
-      const goalsData    = await goalsRes.json();
+      const exerciseData = exerciseRes.ok ? await exerciseRes.json() : { entries: [] };
+      const dietData = dietRes.ok ? await dietRes.json() : { entries: [] };
+      const goalsData = goalsRes.ok ? await goalsRes.json() : { goals: [] };
+      const userData = userRes.ok ? await userRes.json() : { user: { real_name: 'User' } };
 
-      // ── Fill in the stat cards ────────────────────────────
-      const entries       = exerciseData.entries || [];
-      const totalBurned   = entries.reduce((sum, e) => sum + (e.calories_burned || 0), 0);
-      const totalConsumed = dietData.total_calories_today || 0;
-      const activeGoals   = (goalsData.goals || []).filter(g => !g.is_met).length;
+      const greetingElement = document.getElementById('overview-greeting');
+      const motivationElement = document.getElementById('overview-motivation');
 
-      document.getElementById('overview-cal-burned').textContent   = totalBurned;
+      if (greetingElement) {
+        const firstName = userData.user.real_name.split(' ')[0];
+        greetingElement.textContent = `Welcome back, ${firstName}!`;
+      }
+
+      if (motivationElement) {
+        const motivations = [
+          "Every workout counts towards your goals!",
+          "Small steps lead to big changes.",
+          "You're stronger than you think!",
+          "Consistency is the key to success.",
+          "Keep pushing forward!"
+        ];
+        motivationElement.textContent = motivations[Math.floor(Math.random() * motivations.length)];
+      }
+
+      const entries = exerciseData.entries || [];
+      const totalBurned = entries.reduce((sum, e) => sum + (e.calories_burned || 0), 0);
+      const totalConsumed = (dietData.entries || []).reduce((sum, meal) => sum + (meal.calories || 0), 0);
+      const activeGoals = (goalsData.goals || []).filter(goal => !goal.is_met).length;
+
+      document.getElementById('overview-cal-burned').textContent = totalBurned;
       document.getElementById('overview-cal-consumed').textContent = totalConsumed;
-      document.getElementById('overview-sessions').textContent     = entries.length;
-      document.getElementById('overview-goals').textContent        = activeGoals;
+      document.getElementById('overview-sessions').textContent = entries.length;
+      document.getElementById('overview-goals').textContent = activeGoals;
 
-      // ── Render today's exercise list ──────────────────────
-      const exerciseList = document.getElementById('overview-exercise-list');
-      if (entries.length === 0) {
-        exerciseList.innerHTML = '<li class="empty-state">No exercise logged yet — get moving!</li>';
-      } else {
-        // Map each entry to an <li> and join them into one HTML string
-        // This is a common pattern: build HTML as a string, then set innerHTML
-        exerciseList.innerHTML = entries.map(entry => {
-          const detail = entry.exercise_category === 'strength'
-            ? buildStrengthDetail(entry)
-            : buildCardioDetail(entry);
-          return `
-            <li data-entry-id="${entry.id}" class="activity-item-editable">
-              <span>
-                <strong>${entry.activity_name}</strong>
-                <span class="activity-detail">${detail}</span>
-              </span>
-              <span class="activity-actions">
-                <button class="btn-icon edit-exercise-btn" data-id="${entry.id}" title="Edit entry">✎</button>
-                <span class="activity-tag">${entry.activity_type}</span>
-              </span>
-            </li>`;
-        }).join('');
-        
-        // Add event listeners for edit buttons
-        document.querySelectorAll('.edit-exercise-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const entryId = btn.dataset.id;
-            openEditExerciseModal(entryId);
-          });
-        });
-      }
-
-      // ── Render today's meal list ───────────────────────────
-      const mealList  = document.getElementById('overview-meal-list');
-      const meals     = dietData.entries || [];
-      if (meals.length === 0) {
-        mealList.innerHTML = '<li class="empty-state">No meals logged yet.</li>';
-      } else {
-        mealList.innerHTML = meals.map(meal => `
-          <li data-entry-id="${meal.id}" class="activity-item-editable">
-            <span>
-              <strong>${meal.food_name}</strong>
-              <span class="activity-detail">${meal.calories} kcal · ${meal.meal_type}</span>
-            </span>
-            <span class="activity-actions">
-              <button class="btn-icon edit-meal-btn" data-id="${meal.id}" title="Edit entry">✎</button>
-              <span class="activity-tag">${meal.meal_type}</span>
-            </span>
-          </li>`
-        ).join('');
-        
-        // Add event listeners for edit buttons
-        document.querySelectorAll('.edit-meal-btn').forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const entryId = btn.dataset.id;
-            openEditMealModal(entryId);
-          });
-        });
-      }
+      renderExerciseHistory(exerciseData);
+      renderDietHistory(dietData);
 
     } catch (error) {
       console.error('Overview load error:', error.message);
@@ -349,6 +306,217 @@ document.addEventListener('DOMContentLoaded', () => {
     if (entry.distance_km)    parts.push(`${entry.distance_km}km`);
     if (entry.calories_burned) parts.push(`${entry.calories_burned} kcal`);
     return parts.join(' · ') || 'Cardio session';
+  }
+
+  // Render exercise history with filters
+  function renderExerciseHistory(data) {
+    const entries = data.entries || [];
+    const exerciseList = document.getElementById('overview-exercise-list');
+    const filterContainer = document.getElementById('exercise-filter-buttons');
+
+    const filterHtml = `
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all">All Time</button>
+        <button class="filter-btn" data-filter="week">This Week</button>
+        <button class="filter-btn" data-filter="month">This Month</button>
+      </div>
+    `;
+
+    if (filterContainer) {
+      filterContainer.innerHTML = filterHtml;
+      filterContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const filter = e.target.dataset.filter;
+          filterExerciseHistory(filter, entries);
+        });
+      });
+    }
+
+    if (entries.length === 0) {
+      exerciseList.innerHTML = '<li class="empty-state">No exercise logged yet — get moving!</li>';
+    } else {
+      exerciseList.innerHTML = entries.slice(0, 10).map(entry => {
+        const detail = entry.exercise_category === 'strength'
+          ? buildStrengthDetail(entry)
+          : buildCardioDetail(entry);
+        const date = new Date(entry.logged_at).toLocaleDateString();
+        return `
+          <li data-entry-id="${entry.id}" class="activity-item-editable" data-date="${entry.logged_at}">
+            <span>
+              <strong>${entry.activity_name}</strong>
+              <span class="activity-detail">${detail}</span>
+              <span class="activity-date">${date}</span>
+            </span>
+            <span class="activity-actions">
+              <button class="btn-icon edit-exercise-btn" data-id="${entry.id}" title="Edit entry">✎</button>
+              <span class="activity-tag">${entry.activity_type}</span>
+            </span>
+          </li>`;
+      }).join('');
+
+      document.querySelectorAll('.edit-exercise-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const entryId = btn.dataset.id;
+          openEditExerciseModal(entryId);
+        });
+      });
+    }
+  }
+
+  // Render diet history with filters
+  function renderDietHistory(data) {
+    const meals = data.entries || [];
+    const mealList = document.getElementById('overview-meal-list');
+    const filterContainer = document.getElementById('meal-filter-buttons');
+
+    const filterHtml = `
+      <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all">All Time</button>
+        <button class="filter-btn" data-filter="week">This Week</button>
+        <button class="filter-btn" data-filter="month">This Month</button>
+      </div>
+    `;
+
+    if (filterContainer) {
+      filterContainer.innerHTML = filterHtml;
+      filterContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const filter = e.target.dataset.filter;
+          filterDietHistory(filter, meals);
+        });
+      });
+    }
+
+    if (meals.length === 0) {
+      mealList.innerHTML = '<li class="empty-state">No meals logged yet.</li>';
+    } else {
+      mealList.innerHTML = meals.slice(0, 10).map(meal => {
+        const date = new Date(meal.logged_at).toLocaleDateString();
+        return `
+          <li data-entry-id="${meal.id}" class="activity-item-editable" data-date="${meal.logged_at}">
+            <span>
+              <strong>${meal.food_name}</strong>
+              <span class="activity-detail">${meal.calories} kcal · ${meal.meal_type}</span>
+              <span class="activity-date">${date}</span>
+            </span>
+            <span class="activity-actions">
+              <button class="btn-icon edit-meal-btn" data-id="${meal.id}" title="Edit entry">✎</button>
+              <span class="activity-tag">${meal.meal_type}</span>
+            </span>
+          </li>`;
+      }).join('');
+
+      document.querySelectorAll('.edit-meal-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const entryId = btn.dataset.id;
+          openEditMealModal(entryId);
+        });
+      });
+    }
+  }
+
+  // Filter exercise history
+  function filterExerciseHistory(filter, entries) {
+    const now = new Date();
+    let filteredEntries;
+
+    switch (filter) {
+      case 'week':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        filteredEntries = entries.filter(entry => new Date(entry.logged_at) >= weekAgo);
+        break;
+      case 'month':
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        filteredEntries = entries.filter(entry => new Date(entry.logged_at) >= monthAgo);
+        break;
+      default:
+        filteredEntries = entries;
+    }
+
+    const exerciseList = document.getElementById('overview-exercise-list');
+    const filterButtons = exerciseList.querySelector('.filter-buttons');
+
+    // Update active filter button
+    filterButtons.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    filterButtons.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+
+    // Render filtered entries
+    if (filteredEntries.length === 0) {
+      exerciseList.innerHTML = filterButtons.outerHTML + '<li class="empty-state">No exercise logged in this period.</li>';
+    } else {
+      exerciseList.innerHTML = filterButtons.outerHTML + filteredEntries.slice(0, 10).map(entry => {
+        const detail = entry.exercise_category === 'strength'
+          ? buildStrengthDetail(entry)
+          : buildCardioDetail(entry);
+        const date = new Date(entry.logged_at).toLocaleDateString();
+        return `
+          <li data-entry-id="${entry.id}" class="activity-item-editable" data-date="${entry.logged_at}">
+            <span>
+              <strong>${entry.activity_name}</strong>
+              <span class="activity-detail">${detail}</span>
+              <span class="activity-date">${date}</span>
+            </span>
+            <span class="activity-actions">
+              <button class="btn-icon edit-exercise-btn" data-id="${entry.id}" title="Edit entry">✎</button>
+              <span class="activity-tag">${entry.activity_type}</span>
+            </span>
+          </li>`;
+      }).join('');
+    }
+  }
+
+  // Filter diet history
+  function filterDietHistory(filter, meals) {
+    const now = new Date();
+    let filteredMeals;
+
+    switch (filter) {
+      case 'week':
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        filteredMeals = meals.filter(meal => new Date(meal.logged_at) >= weekAgo);
+        break;
+      case 'month':
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        filteredMeals = meals.filter(meal => new Date(meal.logged_at) >= monthAgo);
+        break;
+      default:
+        filteredMeals = meals;
+    }
+
+    const mealList = document.getElementById('overview-meal-list');
+    const filterContainer = document.getElementById('meal-filter-buttons');
+    const filterButtons = filterContainer.querySelector('.filter-buttons');
+
+    // Update active filter button
+    filterButtons.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    filterButtons.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+
+    // Render filtered entries
+    if (filteredMeals.length === 0) {
+      mealList.innerHTML = '<li class="empty-state">No meals logged in this period.</li>';
+    } else {
+      mealList.innerHTML = filteredMeals.slice(0, 10).map(meal => {
+        const date = new Date(meal.logged_at).toLocaleDateString();
+        return `
+          <li data-entry-id="${meal.id}" class="activity-item-editable" data-date="${meal.logged_at}">
+            <span>
+              <strong>${meal.food_name}</strong>
+              <span class="activity-detail">${meal.calories} kcal · ${meal.meal_type}</span>
+              <span class="activity-date">${date}</span>
+            </span>
+            <span class="activity-actions">
+              <button class="btn-icon edit-meal-btn" data-id="${meal.id}" title="Edit entry">✎</button>
+              <span class="activity-tag">${meal.meal_type}</span>
+            </span>
+          </li>`;
+      }).join('');
+    }
   }
 
 
@@ -2077,17 +2245,36 @@ document.addEventListener('DOMContentLoaded', () => {
               <option value="">Select exercise...</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>Sets</label>
-            <input type="number" class="sets-input" min="1" max="10" value="3" required>
+          <div class="form-group exercise-type-indicator">
+            <span class="exercise-type-badge" style="display: none;"></span>
           </div>
-          <div class="form-group">
-            <label>Reps</label>
-            <input type="text" class="reps-input" placeholder="10" required>
+          <div class="strength-fields" style="display: none;">
+            <div class="form-group">
+              <label>Sets</label>
+              <input type="number" class="sets-input" min="1" max="10" value="3" required>
+            </div>
+            <div class="form-group">
+              <label>Reps</label>
+              <input type="text" class="reps-input" placeholder="10" required>
+            </div>
+            <div class="form-group">
+              <label>Rest (sec)</label>
+              <input type="number" class="rest-input" min="0" value="90">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Rest (sec)</label>
-            <input type="number" class="rest-input" min="0" value="90">
+          <div class="cardio-fields" style="display: none;">
+            <div class="form-group">
+              <label>Duration (min)</label>
+              <input type="number" class="duration-input" min="1" placeholder="30">
+            </div>
+            <div class="form-group">
+              <label>Distance (km)</label>
+              <input type="number" class="distance-input" min="0" step="0.1" placeholder="5.0">
+            </div>
+            <div class="form-group">
+              <label>Calories</label>
+              <input type="number" class="calories-input" min="0" placeholder="300">
+            </div>
           </div>
           <button type="button" class="btn btn-sm btn-danger remove-exercise-btn">Remove</button>
         </div>
@@ -2103,6 +2290,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const select = exerciseForm.querySelector('.exercise-select');
       loadExerciseLibraryForSelect(select);
 
+      // Handle exercise selection change
+      select.addEventListener('change', () => {
+        updateExerciseFields(exerciseForm, select.value);
+        updateRoutineExercises();
+      });
+
       // Remove button
       exerciseForm.querySelector('.remove-exercise-btn').addEventListener('click', () => {
         exerciseForm.remove();
@@ -2117,25 +2310,79 @@ document.addEventListener('DOMContentLoaded', () => {
       exerciseForm.addEventListener('change', updateRoutineExercises);
     }
 
+    function updateExerciseFields(exerciseForm, exerciseId) {
+      const strengthFields = exerciseForm.querySelector('.strength-fields');
+      const cardioFields = exerciseForm.querySelector('.cardio-fields');
+      const typeBadge = exerciseForm.querySelector('.exercise-type-badge');
+
+      if (!exerciseId) {
+        strengthFields.style.display = 'none';
+        cardioFields.style.display = 'none';
+        typeBadge.style.display = 'none';
+        return;
+      }
+
+      // Determine if this is a cardio exercise
+      const select = exerciseForm.querySelector('.exercise-select');
+      const selectedOption = select.options[select.selectedIndex];
+      const exerciseName = selectedOption ? selectedOption.text.toLowerCase() : '';
+
+      const cardioKeywords = ['run', 'running', 'cycle', 'cycling', 'swim', 'swimming', 'cardio', 'aerobic', 'elliptical', 'rowing', 'treadmill'];
+      const isCardio = cardioKeywords.some(keyword => exerciseName.includes(keyword));
+
+      if (isCardio) {
+        strengthFields.style.display = 'none';
+        cardioFields.style.display = 'flex';
+        typeBadge.textContent = 'Cardio';
+        typeBadge.className = 'exercise-type-badge cardio';
+        typeBadge.style.display = 'inline-block';
+      } else {
+        strengthFields.style.display = 'flex';
+        cardioFields.style.display = 'none';
+        typeBadge.textContent = 'Strength';
+        typeBadge.className = 'exercise-type-badge strength';
+        typeBadge.style.display = 'inline-block';
+      }
+    }
+
     function updateRoutineExercises() {
       routineExercises = Array.from(exercisesList.querySelectorAll('.exercise-form-item')).map((item, index) => {
         const select = item.querySelector('.exercise-select');
-        const sets = item.querySelector('.sets-input');
-        const reps = item.querySelector('.reps-input');
-        const rest = item.querySelector('.rest-input');
-
         const selectedOption = select.options[select.selectedIndex];
         const exerciseId = selectedOption ? parseInt(selectedOption.value) : null;
         const exerciseName = selectedOption ? selectedOption.text : '';
 
-        return {
-          exercise_id: exerciseId,
-          custom_exercise: exerciseId ? null : exerciseName,
-          sets: parseInt(sets.value) || 3,
-          reps: reps.value || '10',
-          rest_seconds: parseInt(rest.value) || 90,
-          order_position: index + 1
-        };
+        // Determine exercise type
+        const cardioKeywords = ['run', 'running', 'cycle', 'cycling', 'swim', 'swimming', 'cardio', 'aerobic', 'elliptical', 'rowing', 'treadmill'];
+        const isCardio = cardioKeywords.some(keyword => exerciseName.toLowerCase().includes(keyword));
+
+        if (isCardio) {
+          const duration = item.querySelector('.duration-input');
+          const distance = item.querySelector('.distance-input');
+          const calories = item.querySelector('.calories-input');
+
+          return {
+            exercise_id: exerciseId,
+            custom_exercise: exerciseId ? null : exerciseName,
+            duration_mins: parseInt(duration.value) || null,
+            distance_km: parseFloat(distance.value) || null,
+            calories_burned: parseInt(calories.value) || null,
+            order_position: index + 1
+          };
+        } else {
+          const sets = item.querySelector('.sets-input');
+          const reps = item.querySelector('.reps-input');
+          const rest = item.querySelector('.rest-input');
+
+          return {
+            exercise_id: exerciseId,
+            custom_exercise: exerciseId ? null : exerciseName,
+            sets: parseInt(sets.value) || 3,
+            reps: reps.value || '10',
+            rest_seconds: parseInt(rest.value) || 90,
+            order_position: index + 1
+          };
+        }
       });
     }
 
@@ -2186,16 +2433,54 @@ document.addEventListener('DOMContentLoaded', () => {
         // Log each exercise in the routine
         let successCount = 0;
         for (const exercise of routine.exercises) {
-          const exerciseData = {
-            activity_type: exercise.exercise_name || exercise.custom_exercise,
-            activity_name: exercise.exercise_name || exercise.custom_exercise,
-            exercise_category: 'strength', // Assuming routine exercises are strength-based
-            sets: exercise.sets,
-            reps: parseInt(exercise.reps) || exercise.reps,
-            rest_seconds: exercise.rest_seconds,
-            exercise_id: exercise.exercise_id,
-            routine_id: routineId
-          };
+          const activityName = exercise.exercise_name || exercise.custom_exercise;
+          const activityType = exercise.muscle_group || 'Strength';
+
+          // Determine exercise category
+          const cardioKeywords = ['run', 'running', 'cycle', 'cycling', 'swim', 'swimming', 'cardio', 'aerobic', 'elliptical', 'rowing', 'treadmill'];
+          const isCardio = cardioKeywords.some(keyword =>
+            activityName.toLowerCase().includes(keyword) ||
+            activityType.toLowerCase().includes(keyword)
+          );
+
+          // Check if cardio parameters are stored in notes as JSON
+          let cardioParams = null;
+          if (exercise.notes && exercise.notes.startsWith('{')) {
+            try {
+              cardioParams = JSON.parse(exercise.notes);
+            } catch (e) {
+              // Not JSON, treat as regular notes
+            }
+          }
+
+          const exerciseCategory = (isCardio || cardioParams) ? 'cardio' : 'strength';
+          let exerciseData;
+
+          if (exerciseCategory === 'cardio') {
+            exerciseData = {
+              activity_type: activityType,
+              activity_name: activityName,
+              exercise_category: 'cardio',
+              duration_mins: cardioParams?.duration_mins || null,
+              distance_km: cardioParams?.distance_km || null,
+              calories_burned: cardioParams?.calories_burned || null,
+              notes: cardioParams ? null : exercise.notes,
+              exercise_id: exercise.exercise_id,
+              routine_id: routineId
+            };
+          } else {
+            exerciseData = {
+              activity_type: activityType,
+              activity_name: activityName,
+              exercise_category: 'strength',
+              sets: exercise.sets,
+              reps: parseInt(exercise.reps) || exercise.reps,
+              rest_seconds: exercise.rest_seconds,
+              notes: exercise.notes,
+              exercise_id: exercise.exercise_id,
+              routine_id: routineId
+            };
+          }
 
           const logResponse = await fetch('/api/exercise/log', {
             method: 'POST',
