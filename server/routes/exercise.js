@@ -48,7 +48,11 @@ router.post('/log', requireLogin, async (req, res) => {
     sets,
     reps,
     weight_kg_used,    // weight used for the exercise (e.g. 80kg bench press)
-    calories_burned
+    calories_burned,
+    rpe,
+    notes,
+    exercise_id,
+    routine_id
   } = req.body;
 
   // Validate required fields — every exercise needs at minimum a type and name
@@ -72,8 +76,9 @@ router.post('/log', requireLogin, async (req, res) => {
     const result = await db.query(
       `INSERT INTO exercise_entries
          (user_id, activity_type, activity_name, exercise_category,
-          duration_mins, distance_km, sets, reps, weight_kg_used, calories_burned)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          duration_mins, distance_km, sets, reps, weight_kg_used, calories_burned,
+          rpe, notes, exercise_id, routine_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         req.session.userId,
@@ -85,7 +90,11 @@ router.post('/log', requireLogin, async (req, res) => {
         sets           || null,
         reps           || null,
         weight_kg_used || null,
-        calories_burned|| null
+        calories_burned|| null,
+        rpe            || null,
+        notes          || null,
+        exercise_id    || null,
+        routine_id     || null
       ]
     );
 

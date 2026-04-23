@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDietForm();
   setupDietTabs();
   setupSocialTabs();
-  setupGoalsForm();
+  setupStatsGoalsForm();
   setupGroupForms();
   setupRoutinesForm();
   setupStartWorkoutModal();
@@ -136,10 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetSection === 'exercise')  loadExerciseHistory();
         if (targetSection === 'library')   loadExerciseLibrary();
         if (targetSection === 'routines')  loadWorkoutRoutines();
-        if (targetSection === 'records')   loadPersonalRecords();
         if (targetSection === 'social')    loadSocialFeed();
         if (targetSection === 'diet')      loadTodaysDiet();
-        if (targetSection === 'goals')     loadGoals();
         if (targetSection === 'stats')     loadStats();
         if (targetSection === 'groups')    loadGroups();
       });
@@ -158,67 +156,58 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function populateActivityTypes(category = null) {
     try {
-      const response = await fetch('/api/exercises');
+      const response = await fetch('/api/library/exercises');
       const exercises = await response.json();
 
-      // Filter exercises by category if specified
-      let filteredExercises = exercises;
-      if (category) {
-        // Define cardio and strength exercise types
-        const cardioTypes = ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Elliptical', 'Stair Climber', 'Jump Rope', 'Burpees', 'Mountain Climbers', 'High Knees'];
-        const strengthTypes = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull Ups', 'Rows', 'Lunges', 'Dips', 'Push Ups', 'Planks', 'Bicep Curls', 'Tricep Extensions', 'Shoulder Raises', 'Lat Pulldowns', 'Leg Press', 'Calf Raises'];
+      let options = [];
+      if (category === 'strength') {
+        const muscleGroups = [...new Set(
+          exercises
+            .map(ex => ex.muscle_group)
+            .filter(group => group && group.trim() !== '')
+        )].sort();
 
-        if (category === 'cardio') {
-          filteredExercises = exercises.filter(ex =>
-            cardioTypes.some(type => ex.name.toLowerCase().includes(type.toLowerCase())) ||
-            ex.category === 'cardio'
-          );
-        } else if (category === 'strength') {
-          filteredExercises = exercises.filter(ex =>
-            strengthTypes.some(type => ex.name.toLowerCase().includes(type.toLowerCase())) ||
-            ex.category === 'strength'
-          );
-        }
+        options = muscleGroups;
+      } else {
+        const cardioKeywords = ['running', 'cycling', 'swimming', 'walking', 'hiit', 'rowing', 'elliptical', 'stair', 'jump rope', 'burpees', 'mountain climbers', 'high knees'];
+        const cardioExercises = exercises
+          .filter(ex => {
+            return cardioKeywords.some(keyword => ex.name.toLowerCase().includes(keyword)) ||
+                   (ex.muscle_group && ex.muscle_group.toLowerCase() === 'cardio');
+          })
+          .map(ex => ex.name);
+
+        options = [...new Set(cardioExercises)].sort();
       }
 
-      // Get unique exercise names from filtered exercises
-      const exerciseNames = [...new Set(filteredExercises.map(ex => ex.name))];
-
-      // Always add "Custom" option at the end
-      if (!exerciseNames.includes('Custom')) {
-        exerciseNames.push('Custom');
+      if (options.length === 0) {
+        options = category === 'strength'
+          ? ['Shoulders', 'Chest', 'Back', 'Legs', 'Arms', 'Core', 'Glutes']
+          : ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing'];
       }
 
-      // Update the main exercise form dropdown
+      if (!options.includes('Custom')) {
+        options.push('Custom');
+      }
+
       const exTypeSelect = document.getElementById('ex-type');
-      exTypeSelect.innerHTML = '<option value="">Select type</option>';
-
-      exerciseNames.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        exTypeSelect.appendChild(option);
-      });
-
-      // Update the edit exercise modal dropdown
       const editExTypeSelect = document.getElementById('edit-ex-type');
-      editExTypeSelect.innerHTML = '<option value="">Select type</option>';
 
-      exerciseNames.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        editExTypeSelect.appendChild(option);
+      [exTypeSelect, editExTypeSelect].forEach(select => {
+        select.innerHTML = '<option value="">Select type</option>';
+        options.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
       });
 
     } catch (error) {
       console.error('Failed to load activity types:', error);
-      // Fallback to basic options if API fails
-      const fallbackOptions = category === 'cardio'
-        ? ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Custom']
-        : category === 'strength'
-        ? ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull Ups', 'Custom']
-        : ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Pull Ups', 'Custom'];
+      const fallbackOptions = category === 'strength'
+        ? ['Shoulders', 'Chest', 'Back', 'Legs', 'Arms', 'Core', 'Glutes', 'Custom']
+        : ['Running', 'Cycling', 'Swimming', 'Walking', 'HIIT', 'Rowing', 'Custom'];
 
       const exTypeSelect = document.getElementById('ex-type');
       exTypeSelect.innerHTML = '<option value="">Select type</option>';
@@ -1032,15 +1021,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // Fetch exercise, diet, and goals data
-      const [exRes, dietRes, goalsRes] = await Promise.all([
+      const [exRes, dietRes, goalsRes, recordsRes] = await Promise.all([
         fetch('/api/exercise/weekly-summary'),
         fetch('/api/diet/weekly-summary'),
-        fetch('/api/goals/list')
+        fetch('/api/goals/list'),
+        fetch('/api/records/list')
       ]);
 
-      const exData   = await exRes.json();
-      const dietData = await dietRes.json();
+      const exData    = await exRes.json();
+      const dietData  = await dietRes.json();
       const goalsData = await goalsRes.json();
+      const records   = recordsRes.ok ? await recordsRes.json() : [];
+
+      // Render full goals list and form on stats page
+      renderStatsGoalsList(goalsData.goals || []);
+      
+      // Render full records list on stats page
+      renderStatsRecordsList(records || []);
 
       // Update gauge values
       const calBurned = exData.summary.total_calories_burned || 0;
@@ -1061,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderWeeklyActivityChart(exData.summary, dietData.summary);
 
       // Calculate and display goal progress
-      displayGoalProgress(goalsData.goals, exData.summary, dietData.summary);
+      displayGoalProgress(goalsData.goals);
 
       loadingNote.textContent = 'Stats updated for the past 7 days.';
 
@@ -1255,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * displayGoalProgress — shows visual progress bars for active goals
    * based on current weekly activity.
    */
-  function displayGoalProgress(goals, exerciseSummary, dietSummary) {
+  function displayGoalProgress(goals) {
     const container = document.getElementById('goal-progress-container');
 
     if (!goals || goals.length === 0) {
@@ -1270,10 +1267,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     container.innerHTML = activeGoals.map(goal => {
-      const progress = calculateGoalProgress(goal, exerciseSummary, dietSummary);
-      const percentage = Math.min(progress.percentage, 100);
-      const statusText = progress.current >= goal.target_value ?
-        'Goal achieved this week!' : `${progress.current} / ${goal.target_value} ${goal.unit}`;
+      const current = Number(goal.current_value) || 0;
+      const target = Number(goal.target_value) || 0;
+      const percentage = target > 0 ? Math.min((current / target) * 100, 100) : 0;
+      const currentLabel = current > 0 ? `${current} / ${target} ${goal.unit || ''}`.trim() : `0 / ${target} ${goal.unit || ''}`.trim();
+      const statusText = current >= target ? 'Goal achieved this week!' : currentLabel;
 
       return `
         <div class="goal-progress-item">
@@ -1290,10 +1288,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
   }
 
-  /**
-   * calculateGoalProgress — calculates progress percentage for a goal
-   * based on weekly activity data.
-   */
+  function calculateGoalProgress(goal, exerciseSummary, dietSummary) {
+    let current = 0;
+    let unit = '';
+
+    switch (goal.goal_type) {
+      case 'calories_burned':
+        current = exerciseSummary.total_calories_burned || 0;
+        unit = 'kcal';
+        break;
+      case 'workout_sessions':
+        current = exerciseSummary.total_sessions || 0;
+        unit = 'sessions';
+        break;
+      case 'run_distance':
+        current = 0;
+        unit = 'km';
+        break;
+      case 'weight':
+      case 'steps':
+        current = goal.current_value || 0;
+        unit = goal.goal_type === 'weight' ? 'kg' : 'steps';
+        break;
+      default:
+        current = 0;
+        unit = '';
+    }
+
+    const percentage = goal.target_value > 0 ? (current / goal.target_value) * 100 : 0;
+    return { current, percentage, unit };
+  }
   function calculateGoalProgress(goal, exerciseSummary, dietSummary) {
     let current = 0;
     let unit = '';
@@ -1327,6 +1351,328 @@ document.addEventListener('DOMContentLoaded', () => {
     const percentage = goal.target_value > 0 ? (current / goal.target_value) * 100 : 0;
 
     return { current, percentage, unit };
+  }
+
+  function renderStatsGoalsPreview(goals) {
+    const container = document.getElementById('stats-goals-preview');
+    if (!container) return;
+
+    if (!goals || goals.length === 0) {
+      container.innerHTML = `
+        <h3 class="card-heading">Goals</h3>
+        <p class="empty-state">No goals set yet. Add goals to track progress.</p>
+      `;
+      return;
+    }
+
+    const activeGoals = goals.slice(0, 3);
+    container.innerHTML = `
+      <h3 class="card-heading">Goals</h3>
+      <ul class="stats-preview-list">
+        ${activeGoals.map(goal => {
+          const label = goal.description || getGoalTypeLabel(goal.goal_type);
+          const progress = goal.target_value > 0
+            ? Math.min(100, Math.round((goal.current_value / goal.target_value) * 100))
+            : 0;
+          return `
+            <li class="stats-preview-item">
+              <strong>${label}</strong>
+              <span>${progress}% complete</span>
+              <div class="progress-bar small">
+                <div class="progress-fill" style="width: ${progress}%"></div>
+              </div>
+            </li>`;
+        }).join('')}
+      </ul>
+    `;
+  }
+
+  /**
+   * renderStatsGoalsList — renders the full goals list on the stats page
+   */
+  function renderStatsGoalsList(goals) {
+    const list = document.getElementById('stats-goals-list');
+    if (!list) return;
+
+    if (!goals || goals.length === 0) {
+      list.innerHTML = '<li class="empty-state">No goals set yet. Set your first goal above!</li>';
+      return;
+    }
+
+    list.innerHTML = goals.map(goal => {
+      const current = Number(goal.current_value) || 0;
+      const target = Number(goal.target_value) || 0;
+      const progress = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+      const statusClass = goal.is_met    ? 'met'
+                        : goal.is_overdue ? 'overdue'
+                        : '';
+      const statusText = goal.is_met    ? ' ✓ Met!'
+                       : goal.is_overdue ? ' ⚠ Overdue'
+                       : `${progress}%`;
+      const showDate = ['weight', 'run_distance', 'calories_burned', 'workout_sessions'].includes(goal.goal_type);
+      const deadlineText = showDate && goal.target_date ? ` · Deadline: ${new Date(goal.target_date).toLocaleDateString('en-GB')}` : '';
+      const currentLabel = current > 0 ? `${current} / ${target} ${goal.unit || ''}`.trim() : `0 / ${target} ${goal.unit || ''}`.trim();
+
+      return `
+        <li class="goal-item ${statusClass}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>${goal.description || getGoalTypeLabel(goal.goal_type)}</strong>
+            <span class="activity-tag">${statusText}</span>
+          </div>
+          ${goal.description ? `<p style="color:var(--text-secondary); font-size:0.9rem;">${goal.description}</p>` : ''}
+          <p style="color:var(--text-muted); font-size:0.85rem;">
+            ${currentLabel}${deadlineText}
+          </p>
+          <div class="progress-bar" aria-label="${progress}% complete">
+            <div class="progress-fill" style="width: ${progress}%"></div>
+          </div>
+        </li>`;
+    }).join('');
+  }
+
+  function renderStatsRecordsPreview(records) {
+    const container = document.getElementById('stats-records-preview');
+    if (!container) return;
+
+    if (!records || records.length === 0) {
+      container.innerHTML = `
+        <h3 class="card-heading">Personal Records</h3>
+        <p class="empty-state">No personal records yet. Lift more to set PRs.</p>
+      `;
+      return;
+    }
+
+    const topRecords = records.slice(0, 4);
+    container.innerHTML = `
+      <h3 class="card-heading">Personal Records</h3>
+      <ul class="stats-preview-list">
+        ${topRecords.map(record => `
+          <li class="stats-preview-item">
+            <strong>${record.exercise_name || record.custom_exercise}</strong>
+            <span>${record.value} ${getRecordUnit(record.record_type)}</span>
+            <small>${record.record_type.replace('_', ' ').toUpperCase()}</small>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  }
+
+  /**
+   * renderStatsRecordsList — renders the full personal records list on the stats page
+   */
+  function renderStatsRecordsList(records) {
+    const container = document.getElementById('stats-personal-records-list');
+    if (!container) return;
+
+    if (!records || records.length === 0) {
+      container.innerHTML = '<div class="empty-state">No personal records yet. Start lifting to set your first PR!</div>';
+      return;
+    }
+
+    // Group records by exercise
+    const groupedRecords = {};
+    records.forEach(record => {
+      const key = record.exercise_id || record.custom_exercise;
+      if (!groupedRecords[key]) {
+        groupedRecords[key] = {
+          exercise: record.exercise_name || record.custom_exercise,
+          records: []
+        };
+      }
+      groupedRecords[key].records.push(record);
+    });
+
+    container.innerHTML = '';
+    Object.values(groupedRecords).forEach(group => {
+      const section = document.createElement('div');
+      section.className = 'records-section';
+      section.innerHTML = `<h4>${group.exercise}</h4>`;
+
+      const recordsList = document.createElement('div');
+      recordsList.className = 'records-grid';
+
+      group.records.forEach(record => {
+        const recordEl = document.createElement('div');
+        recordEl.className = 'record-item';
+        recordEl.innerHTML = `
+          <div class="record-type">${record.record_type.replace('_', ' ').toUpperCase()}</div>
+          <div class="record-value">${record.value} ${getRecordUnit(record.record_type)}</div>
+          <div class="record-date">${new Date(record.achieved_at).toLocaleDateString()}</div>
+        `;
+        recordsList.appendChild(recordEl);
+      });
+
+      section.appendChild(recordsList);
+      container.appendChild(section);
+    });
+
+    // Populate exercise filter for records
+    const exerciseFilter = document.getElementById('stats-records-exercise-filter');
+    if (exerciseFilter) {
+      const currentValue = exerciseFilter.value;
+      exerciseFilter.innerHTML = '<option value="">All exercises</option>';
+      Object.values(groupedRecords).forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.exercise;
+        option.textContent = group.exercise;
+        exerciseFilter.appendChild(option);
+      });
+      exerciseFilter.value = currentValue;
+    }
+
+    setupStatsRecordsFilters();
+  }
+
+  /**
+   * setupStatsRecordsFilters — attach filter event listeners for records on stats page
+   */
+  function setupStatsRecordsFilters() {
+    const exerciseFilter = document.getElementById('stats-records-exercise-filter');
+    const typeFilter = document.getElementById('stats-records-type-filter');
+
+    function filterRecords() {
+      const exerciseValue = exerciseFilter.value;
+      const typeValue = typeFilter.value;
+
+      const sections = document.querySelectorAll('#stats-personal-records-list .records-section');
+      sections.forEach(section => {
+        const exercise = section.querySelector('h4').textContent;
+        const records = section.querySelectorAll('.record-item');
+
+        const exerciseMatch = !exerciseValue || exercise === exerciseValue;
+
+        if (!exerciseMatch) {
+          section.style.display = 'none';
+        } else {
+          const visibleRecords = Array.from(records).filter(record => {
+            if (!typeValue) return true;
+            const recordType = record.querySelector('.record-type').textContent.toLowerCase();
+            return recordType.includes(typeValue.toLowerCase());
+          });
+
+          section.style.display = visibleRecords.length > 0 ? 'block' : 'none';
+        }
+      });
+    }
+
+    if (exerciseFilter) exerciseFilter.addEventListener('change', filterRecords);
+    if (typeFilter) typeFilter.addEventListener('change', filterRecords);
+  }
+
+  /**
+   * setupStatsGoalsForm — wires up the goal creation form on the stats page.
+   * When a goal is created, it reloads stats to show updated goal progress.
+   */
+  function setupStatsGoalsForm() {
+    const form      = document.getElementById('stats-goal-form');
+    if (!form) return;
+
+    const msgEl     = document.getElementById('stats-goal-message');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const typeInput = document.getElementById('stats-goal-type');
+    const targetInput = document.getElementById('stats-goal-target');
+    const dateInput = document.getElementById('stats-goal-date');
+    const dateGroup = dateInput.closest('.form-group');
+
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('min', today);
+
+    function updateGoalFields() {
+      const goalType = typeInput.value;
+      const config = getGoalTargetConfig(goalType);
+
+      targetInput.min = config.min;
+      targetInput.max = config.max;
+      targetInput.step = config.step;
+      targetInput.placeholder = config.placeholder;
+      targetInput.value = '';
+
+      if (config.showDate) {
+        dateGroup.style.display = 'block';
+        dateInput.required = true;
+      } else {
+        dateGroup.style.display = 'none';
+        dateInput.required = false;
+        dateInput.value = '';
+      }
+    }
+
+    typeInput.addEventListener('change', updateGoalFields);
+    updateGoalFields();
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const formData     = new FormData(form);
+      const goal_type    = formData.get('goal_type');
+      const target_value = Number(formData.get('target_value'));
+      const target_date  = formData.get('target_date');
+      const description  = formData.get('description') || null;
+      const config       = getGoalTargetConfig(goal_type);
+
+      if (!goal_type || !formData.get('target_value')) {
+        showMessage(msgEl, 'Goal type and target value are required.', 'error');
+        return;
+      }
+
+      if (target_value <= 0 || target_value < config.min || target_value > config.max) {
+        showMessage(msgEl, `Set a target value between ${config.min} and ${config.max}.`, 'error');
+        return;
+      }
+
+      if (config.showDate && !target_date) {
+        showMessage(msgEl, 'A target date is required for this goal type.', 'error');
+        return;
+      }
+
+      setLoading(submitBtn, true, 'Saving goal...');
+      clearMessage(msgEl);
+
+      const payload = { goal_type, target_value, description };
+      if (config.showDate) payload.target_date = target_date;
+
+      try {
+        const response = await fetch('/api/goals/create', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage(msgEl, 'Goal set! Refreshing stats...', 'success');
+          form.reset();
+          updateGoalFields();
+          loadStats();
+        } else {
+          showMessage(msgEl, data.error || 'Failed to create goal.', 'error');
+        }
+
+      } catch (error) {
+        console.error('Goal create error:', error.message);
+        showMessage(msgEl, 'Network error. Please try again.', 'error');
+      } finally {
+        setLoading(submitBtn, false, 'Set Goal');
+      }
+    });
+  }
+
+  function getGoalTargetConfig(goalType) {
+    switch (goalType) {
+      case 'weight':
+        return { min: 1, max: 200, step: 0.1, placeholder: '70', showDate: true };
+      case 'run_distance':
+        return { min: 0.1, max: 100, step: 0.1, placeholder: '15', showDate: true };
+      case 'calories_burned':
+        return { min: 100, max: 30000, step: 1, placeholder: '3000', showDate: true };
+      case 'steps':
+        return { min: 100, max: 20000, step: 10, placeholder: '10000', showDate: false };
+      case 'workout_sessions':
+        return { min: 1, max: 14, step: 1, placeholder: '4', showDate: true };
+      default:
+        return { min: 0, max: 999999, step: 1, placeholder: 'Target value', showDate: false };
+    }
   }
 
   /**
@@ -2500,8 +2846,8 @@ document.addEventListener('DOMContentLoaded', () => {
           messageEl.textContent = 'Workout started successfully!';
           messageEl.className = 'form-message success';
           modal.close();
-          // Refresh the dashboard or navigate to workout tracking
-          loadDashboard();
+          loadOverview();
+          loadExerciseHistory();
         } else {
           const error = await response.json();
           messageEl.textContent = error.message || 'Failed to start workout.';

@@ -29,10 +29,8 @@
       <button class="nav-btn"        data-section="exercise">Exercise</button>
       <button class="nav-btn"        data-section="library">Library</button>
       <button class="nav-btn"        data-section="routines">Routines</button>
-      <button class="nav-btn"        data-section="records">Records</button>
       <button class="nav-btn"        data-section="social">Social</button>
       <button class="nav-btn"        data-section="diet">Diet</button>
-      <button class="nav-btn"        data-section="goals">Goals</button>
       <button class="nav-btn"        data-section="stats">Stats</button>
     </nav>
 
@@ -405,59 +403,90 @@
       </div>
     </section>
 
-    <!-- ── GOALS SECTION ──────────────────────────────── -->
-    <section id="section-goals" class="dash-section" aria-label="Goals" hidden>
-      <h2 class="section-heading">Your Goals</h2>
-
-      <div class="dashboard-card">
-        <h3 class="card-heading">Set a New Goal</h3>
-        <form id="goal-form" novalidate>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="goal-type">Goal type</label>
-              <select id="goal-type" name="goal_type" required>
-                <option value="">Select type</option>
-                <option value="weight">Target weight (kg)</option>
-                <option value="run_distance">Run distance (km)</option>
-                <option value="calories_burned">Calories burned / week</option>
-                <option value="steps">Daily steps</option>
-                <option value="workout_sessions">Workouts per week</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="goal-target">Target value</label>
-              <input type="number" id="goal-target" name="target_value" min="0" step="0.1" placeholder="70" required />
-            </div>
-
-            <div class="form-group">
-              <label for="goal-date">Target date</label>
-              <input type="date" id="goal-date" name="target_date" required />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="goal-description">Description <span class="hint">(optional)</span></label>
-            <input type="text" id="goal-description" name="description" placeholder="e.g. Get to 70kg before summer" />
-          </div>
-
-          <p class="form-message" id="goal-message" aria-live="polite"></p>
-          <button type="submit" class="btn btn-primary">Set Goal</button>
-        </form>
-      </div>
-
-      <!-- List of active and completed goals -->
-      <div class="dashboard-card">
-        <h3 class="card-heading">Active Goals</h3>
-        <ul id="goals-list" class="goals-list" aria-label="Your goals">
-          <li class="empty-state">No goals set yet. Set your first goal above!</li>
-        </ul>
-      </div>
-    </section>
-
     <!-- ── STATS SECTION ──────────────────────────────── -->
     <section id="section-stats" class="dash-section" aria-label="Statistics" hidden>
       <h2 class="section-heading">Statistics</h2>
+
+      <!-- Goals + Records Side-by-Side -->
+      <div class="stats-preview-grid">
+        <!-- Left: Goals Management -->
+        <div id="stats-goals-container" class="dashboard-card">
+          <h3 class="card-heading">Your Goals</h3>
+          
+          <!-- Set a New Goal -->
+          <form id="stats-goal-form" novalidate style="margin-bottom: 2rem;">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="stats-goal-type">Goal type</label>
+                <select id="stats-goal-type" name="goal_type" required>
+                  <option value="">Select type</option>
+                  <option value="weight">Target weight (kg)</option>
+                  <option value="run_distance">Run distance (km)</option>
+                  <option value="calories_burned">Calories burned / week</option>
+                  <option value="steps">Daily steps</option>
+                  <option value="workout_sessions">Workouts per week</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="stats-goal-target">Target value</label>
+                <input type="number" id="stats-goal-target" name="target_value" min="0" step="0.1" placeholder="70" required />
+              </div>
+
+              <div class="form-group">
+                <label for="stats-goal-date">Target date</label>
+                <input type="date" id="stats-goal-date" name="target_date" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="stats-goal-description">Description <span class="hint">(optional)</span></label>
+              <input type="text" id="stats-goal-description" name="description" placeholder="e.g. Get to 70kg before summer" />
+            </div>
+
+            <p class="form-message" id="stats-goal-message" aria-live="polite"></p>
+            <button type="submit" class="btn btn-primary">Set Goal</button>
+          </form>
+
+          <!-- Active Goals List -->
+          <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 1rem;">
+            <h4 class="card-heading" style="font-size: 0.95rem; margin-bottom: 1rem;">Active Goals</h4>
+            <ul id="stats-goals-list" class="goals-list" aria-label="Your goals">
+              <li class="empty-state">No goals set yet. Set your first goal above!</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Right: Personal Records -->
+        <div id="stats-records-container" class="dashboard-card">
+          <h3 class="card-heading">Personal Records</h3>
+
+          <div class="records-controls" style="margin-bottom: 1.5rem;">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="stats-records-exercise-filter">Filter by exercise</label>
+                <select id="stats-records-exercise-filter">
+                  <option value="">All exercises</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="stats-records-type-filter">Record type</label>
+                <select id="stats-records-type-filter">
+                  <option value="">All types</option>
+                  <option value="weight">Max Weight</option>
+                  <option value="reps">Max Reps</option>
+                  <option value="volume">Max Volume</option>
+                  <option value="one_rep_max">1RM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="stats-personal-records-list" class="records-list">
+            <div class="empty-state">No personal records yet. Start lifting to set your first PR!</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Visual Gauge Cards -->
       <div class="stats-grid-visual">
@@ -635,38 +664,6 @@
 
         <div id="public-routines-list" class="routines-list">
           <div class="empty-state">Loading public routines...</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── PERSONAL RECORDS SECTION ──────────────────────────── -->
-    <section id="section-records" class="dash-section" aria-label="Personal Records" hidden>
-      <h2 class="section-heading">Personal Records</h2>
-
-      <div class="dashboard-card">
-        <div class="records-controls">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="records-exercise-filter">Filter by exercise</label>
-              <select id="records-exercise-filter">
-                <option value="">All exercises</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="records-type-filter">Record type</label>
-              <select id="records-type-filter">
-                <option value="">All types</option>
-                <option value="weight">Max Weight</option>
-                <option value="reps">Max Reps</option>
-                <option value="volume">Max Volume</option>
-                <option value="one_rep_max">1RM</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div id="personal-records-list" class="records-list">
-          <div class="empty-state">No personal records yet. Start lifting to set your first PR!</div>
         </div>
       </div>
     </section>

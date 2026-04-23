@@ -21,25 +21,62 @@ function requireLogin(req, res, next) {
   next();
 }
 
+async function getWeeklyGoalValues(userId) {
+  const result = await db.query(
+    `SELECT
+       COALESCE(SUM(calories_burned), 0)      AS total_calories_burned,
+       COUNT(*)                              AS total_sessions,
+       COALESCE(SUM(CASE WHEN LOWER(activity_type) IN ('run', 'running') THEN distance_km ELSE 0 END), 0) AS run_distance
+     FROM exercise_entries
+     WHERE user_id = $1
+       AND logged_at >= NOW() - INTERVAL '7 days'`,
+    [userId]
+  );
+
+  return result.rows[0] || {
+    total_calories_burned: 0,
+    total_sessions: 0,
+    run_distance: 0
+  };
+}
+
+function getGoalTargetConfig(goalType) {
+  switch (goalType) {
+    case 'weight': return { min: 1, max: 200, requiresDate: true };
+    case 'run_distance': return { min: 0.1, max: 100, requiresDate: true };
+    case 'calories_burned': return { min: 100, max: 30000, requiresDate: true };
+    case 'steps': return { min: 100, max: 20000, requiresDate: false };
+    case 'workout_sessions': return { min: 1, max: 14, requiresDate: true };
+    default: return { min: 0, max: 999999, requiresDate: false };
+  }
+}
+
 // ── POST /api/goals/create ───────────────────────────────
 // Creates a new goal for the logged-in user.
 // Example goal: { goal_type: 'weight', target_value: 70, target_date: '2026-06-01' }
 router.post('/create', requireLogin, async (req, res) => {
   const { goal_type, description, target_value, target_date } = req.body;
+  const targetValue = Number(target_value);
+  const config = getGoalTargetConfig(goal_type);
 
-  if (!goal_type || !target_value || !target_date) {
-    return res.status(400).json({
-      error: 'Goal type, target value and target date are all required.'
-    });
+  if (!goal_type || !target_value || Number.isNaN(targetValue) || targetValue <= 0) {
+    return res.status(400).json({ error: 'Goal type and a valid target value are required.' });
+  }
+
+  if (targetValue < config.min || targetValue > config.max) {
+    return res.status(400).json({ error: `Target value for ${goal_type} must be between ${config.min} and ${config.max}.` });
+  }
+
+  if (config.requiresDate && !target_date) {
+    return res.status(400).json({ error: 'Target date is required for this goal type.' });
   }
 
   try {
-    const result = await db.query(
-      `INSERT INTO goals (user_id, goal_type, description, target_value, target_date)
+    const createQuery = `INSERT INTO goals (user_id, goal_type, description, target_value, target_date)
        VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [req.session.userId, goal_type, description || null, target_value, target_date]
-    );
+       RETURNING *`;
+    const values = [req.session.userId, goal_type, description || null, targetValue, config.requiresDate ? target_date : null];
+    const result = await db.query(createQuery, values);
 
     return res.status(201).json({
       message: 'Goal created! You\'ve got this.',
@@ -57,8 +94,6 @@ router.post('/create', requireLogin, async (req, res) => {
 // have passed their target date so we can flag them.
 router.get('/list', requireLogin, async (req, res) => {
   try {
-    // We also check if any goals have exceeded their target date
-    // and mark them as overdue if they're not met yet.
     const result = await db.query(
       `SELECT *,
          CASE
@@ -71,7 +106,44 @@ router.get('/list', requireLogin, async (req, res) => {
       [req.session.userId]
     );
 
-    return res.status(200).json({ goals: result.rows });
+    const weeklyValues = await getWeeklyGoalValues(req.session.userId);
+    const goals = result.rows.map(goal => {
+      let currentValue = Number(goal.current_value) || 0;
+      switch (goal.goal_type) {
+        case 'calories_burned':
+          currentValue = Number(weeklyValues.total_calories_burned);
+          break;
+        case 'workout_sessions':
+          currentValue = Number(weeklyValues.total_sessions);
+          break;
+        case 'run_distance':
+          currentValue = Number(weeklyValues.run_distance);
+          break;
+        case 'weight':
+        case 'steps':
+          currentValue = Number(goal.current_value) || 0;
+          break;
+        default:
+          currentValue = Number(goal.current_value) || 0;
+      }
+
+      const isMet = Number(goal.target_value) > 0 && currentValue >= Number(goal.target_value);
+
+      return {
+        ...goal,
+        current_value: currentValue,
+        is_met: isMet,
+        unit: {
+          calories_burned: 'kcal',
+          workout_sessions: 'sessions',
+          run_distance: 'km',
+          weight: 'kg',
+          steps: 'steps'
+        }[goal.goal_type] || ''
+      };
+    });
+
+    return res.status(200).json({ goals });
 
   } catch (error) {
     console.error('Goals list error:', error.message);

@@ -82,6 +82,7 @@ const goalRoutes     = require('./routes/goals');
 const groupRoutes    = require('./routes/groups');
 const libraryRoutes  = require('./routes/library');
 const routineRoutes  = require('./routes/routines');
+const workoutRoutes  = require('./routes/workouts');
 const recordRoutes   = require('./routes/records');
 const socialRoutes   = require('./routes/social');
 
@@ -92,6 +93,7 @@ app.use('/api/goals',    goalRoutes);      // /api/goals/create, /api/goals/list
 app.use('/api/groups',   groupRoutes);     // /api/groups/create, /api/groups/join, etc.
 app.use('/api/library',  libraryRoutes);   // /api/library/exercises, etc.
 app.use('/api/routines', routineRoutes);   // /api/routines/list, /api/routines/create, etc.
+app.use('/api/workouts', workoutRoutes);   // /api/workouts/start, etc.
 app.use('/api/records',  recordRoutes);    // /api/records/list, /api/records/stats, etc.
 app.use('/api/social',   socialRoutes);    // /api/social/feed, /api/social/posts, etc.
 

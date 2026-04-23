@@ -8,6 +8,10 @@ router.get('/list', async (req, res) => {
   try {
     const userId = req.session.userId;
 
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
     const query = `
       SELECT
         pr.id,
@@ -28,7 +32,8 @@ router.get('/list', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching personal records:', error);
-    res.status(500).json({ error: 'Failed to load personal records' });
+    // Return empty array instead of crashing
+    res.json([]);
   }
 });
 
