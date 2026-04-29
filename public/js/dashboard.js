@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── STEP 2: SET UP NAVIGATION ───────────────────────────
   setupNavigation();
+  const initialSection = new URLSearchParams(window.location.search).get('section') || 'overview';
+  activateSection(initialSection);
 
   // ── STEP 3: LOAD INITIAL DATA ───────────────────────────
   // Load the overview data so the dashboard isn't empty on arrival
@@ -56,8 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStartWorkoutModal();
   populateActivityTypes('cardio'); // Initialize with cardio exercises since it's the default tab
 
-  // ── STEP 5: LOGOUT BUTTON ───────────────────────────────
+  // ── STEP 5: LOGOUT + PROFILE BUTTONS ────────────────────
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
+  const profileBtn = document.getElementById('profile-btn');
+  if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+      window.location.href = '/settings';
+    });
+  }
 
 
   // ============================================================
@@ -109,39 +117,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     navButtons.forEach(button => {
       button.addEventListener('click', () => {
-        const targetSection = button.dataset.section;
-
-        // Remove 'active' from all nav buttons, then add it to the clicked one
-        navButtons.forEach(btn => {
-          btn.classList.remove('active');
-          btn.removeAttribute('aria-current');
-        });
-        button.classList.add('active');
-        button.setAttribute('aria-current', 'page');
-
-        // Hide all sections, then show the target one
-        // querySelectorAll returns a NodeList — we use forEach to loop over it
-        document.querySelectorAll('.dash-section').forEach(section => {
-          section.hidden = true;
-        });
-
-        const target = document.getElementById(`section-${targetSection}`);
-        if (target) {
-          target.hidden = false;
-        }
-
-        // Load fresh data when switching to certain sections
-        // We don't want stale data showing from a previous visit
-        if (targetSection === 'overview')  loadOverview();
-        if (targetSection === 'exercise')  loadExerciseHistory();
-        if (targetSection === 'library')   loadExerciseLibrary();
-        if (targetSection === 'routines')  loadWorkoutRoutines();
-        if (targetSection === 'social')    loadSocialFeed();
-        if (targetSection === 'diet')      loadTodaysDiet();
-        if (targetSection === 'stats')     loadStats();
-        if (targetSection === 'groups')    loadGroups();
+        activateSection(button.dataset.section);
       });
     });
+  }
+
+  function activateSection(targetSection) {
+    const navButtons = document.querySelectorAll('.nav-btn');
+
+    navButtons.forEach(btn => {
+      btn.classList.remove('active');
+      btn.removeAttribute('aria-current');
+      if (btn.dataset.section === targetSection) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-current', 'page');
+      }
+    });
+
+    document.querySelectorAll('.dash-section').forEach(section => {
+      section.hidden = true;
+    });
+
+    const target = document.getElementById(`section-${targetSection}`);
+    if (target) {
+      target.hidden = false;
+    }
+
+    if (targetSection === 'overview')  loadOverview();
+    if (targetSection === 'exercise')  loadExerciseHistory();
+    if (targetSection === 'library')   loadExerciseLibrary();
+    if (targetSection === 'routines')  loadWorkoutRoutines();
+    if (targetSection === 'social')    loadSocialFeed();
+    if (targetSection === 'diet')      loadTodaysDiet();
+    if (targetSection === 'stats')     loadStats();
+    if (targetSection === 'groups')    loadGroups();
   }
 
 

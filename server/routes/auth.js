@@ -209,15 +209,13 @@ router.post('/logout', (req, res) => {
 
 // ── GET /api/auth/me ─────────────────────────────────────
 // Returns the logged-in user's profile.
-// The dashboard calls this on load to display the user's name, stats, etc.
+// The dashboard and settings page call this on load to display user info.
 router.get('/me', async (req, res) => {
-  // Check if there's an active session with a userId
   if (!req.session.userId) {
     return res.status(401).json({ error: 'Not logged in.' });
   }
 
   try {
-    // Fetch user data — note we DO NOT select the password column
     const result = await db.query(
       `SELECT id, username, real_name, email, height_cm, weight_kg, age, created_at
        FROM users WHERE id = $1`,
@@ -229,10 +227,129 @@ router.get('/me', async (req, res) => {
     }
 
     return res.status(200).json({ user: result.rows[0] });
-
   } catch (error) {
     console.error('Get profile error:', error.message);
     return res.status(500).json({ error: 'Could not load profile.' });
+  }
+});
+
+// ── PUT /api/auth/profile ─────────────────────────────────
+// Updates basic account details like name, username, and email.
+router.put('/profile', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in.' });
+  }
+
+  const { real_name, username, email, current_password } = req.body;
+
+  if (!real_name || !username || !email || !current_password) {
+    return res.status(400).json({ error: 'Name, username, email, and current password are required.' });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+
+  try {
+    const userResult = await db.query(
+      'SELECT password FROM users WHERE id = $1',
+      [req.session.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const passwordMatches = await bcrypt.compare(current_password, userResult.rows[0].password);
+    if (!passwordMatches) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+
+    const conflict = await db.query(
+      'SELECT id FROM users WHERE (username = $1 OR email = $2) AND id <> $3',
+      [username.toLowerCase(), email.toLowerCase(), req.session.userId]
+    );
+
+    if (conflict.rows.length > 0) {
+      return res.status(409).json({ error: 'That username or email is already in use.' });
+    }
+
+    await db.query(
+      `UPDATE users SET username = $1, real_name = $2, email = $3
+       WHERE id = $4`,
+      [username.toLowerCase(), real_name, email.toLowerCase(), req.session.userId]
+    );
+
+    req.session.username = username.toLowerCase();
+
+    return res.status(200).json({ message: 'Profile updated successfully.' });
+  } catch (error) {
+    console.error('Update profile error:', error.message);
+    return res.status(500).json({ error: 'Could not update profile.' });
+  }
+});
+
+// ── PUT /api/auth/password ────────────────────────────────
+// Allows the user to change their password securely.
+router.put('/password', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in.' });
+  }
+
+  const { current_password, new_password } = req.body;
+
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'Current password and new password are required.' });
+  }
+
+  if (new_password.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+  }
+
+  try {
+    const userResult = await db.query(
+      'SELECT password FROM users WHERE id = $1',
+      [req.session.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const passwordMatches = await bcrypt.compare(current_password, userResult.rows[0].password);
+    if (!passwordMatches) {
+      return res.status(401).json({ error: 'Current password is incorrect.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 12);
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, req.session.userId]);
+
+    return res.status(200).json({ message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Change password error:', error.message);
+    return res.status(500).json({ error: 'Could not update password.' });
+  }
+});
+
+// ── DELETE /api/auth/delete-account ───────────────────────
+// Permanently deletes the current user's account.
+router.delete('/delete-account', async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not logged in.' });
+  }
+
+  try {
+    await db.query('DELETE FROM users WHERE id = $1', [req.session.userId]);
+    req.session.destroy((error) => {
+      if (error) {
+        console.error('Delete account session destroy error:', error.message);
+      }
+      res.clearCookie('connect.sid');
+      return res.status(200).json({ message: 'Account deleted successfully.' });
+    });
+  } catch (error) {
+    console.error('Delete account error:', error.message);
+    return res.status(500).json({ error: 'Could not delete account. Please contact support.' });
   }
 });
 

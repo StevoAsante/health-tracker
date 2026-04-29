@@ -37,9 +37,12 @@ html(lang='en')
         button.nav-btn(data-section='stats') Stats
 
       //- User menu — shows greeting and logout button
+      //- The profile button opens the settings page when clicked.
       .header-user
-        span#user-greeting.user-greeting Hey, —
-        button.btn.btn-outline.btn-sm#logout-btn Log Out
+        button#profile-btn.btn.btn-sm(type='button', aria-label='Open profile settings')
+          span.profile-icon(aria-hidden='true') 👤
+          span#user-greeting.user-greeting Hey, —
+        button.btn.btn-outline.btn-sm#logout-btn(type='button') Log Out
 
     //- ========================================================
     //- MAIN CONTENT AREA — Where page content goes
@@ -49,9 +52,3 @@ html(lang='en')
     main.dashboard-main
       block content
 
-    //- ========================================================
-    //- SCRIPTS — JavaScript files loaded at bottom
-    //- ========================================================
-    //- Chart.js for graphs, dashboard.js for page functionality
-    script(src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
-    script(src='/js/dashboard.js')

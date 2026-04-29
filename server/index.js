@@ -121,6 +121,14 @@ app.get('/dashboard', (req, res) => {
   res.render('dashboard', { pageTitle: 'Health Tracker — Dashboard' });
 });
 
+// Settings page — protected route for user preferences
+app.get('/settings', (req, res) => {
+  if (!req.session.userId) {
+    return res.redirect('/');
+  }
+  res.render('settings', { pageTitle: 'Settings | Health Tracker' });
+});
+
 // ── 404 HANDLER ──────────────────────────────────────────
 // If no route above matched the request, send a 404 error.
 // This MUST be the last app.use() because Express checks routes in order.

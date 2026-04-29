@@ -1,0 +1,175 @@
+//- ========================================================
+//- settings.pug — User Settings Page
+//- ========================================================
+//- This page gives the user a control panel for personal data,
+//- notification preferences, privacy settings, and accessibility.
+//- The page loads the user's account info from the backend and
+//- stores UI preferences locally for the current browser session.
+//- ========================================================
+
+extends layout
+
+block content
+  .settings-page
+    .settings-hero
+      .settings-hero-copy
+        h2.section-heading Settings
+        p.section-description Manage your account, notification preferences, privacy, and accessibility options.
+        p.section-note Keep your profile safe, personalize your experience, and save the controls you use most.
+      .settings-hero-actions
+        button#settings-back-btn.btn.btn-outline(type='button') Back to dashboard
+        button#save-preferences-btn.btn.btn-primary(type='button') Save preferences
+
+    .settings-summary-grid
+      .settings-summary-card
+        h3 Quick status
+        p Current profile data and experience preferences load automatically when this page opens.
+      .settings-summary-card
+        h3 What changed
+        p Enter your current password to confirm profile updates, then save preferences to keep your experience fresh.
+      .settings-summary-card
+        h3 Tip
+        p Notification and accessibility toggles are saved locally in your browser for fast app behavior.
+
+    p#preferences-message.form-message(aria-live='polite')
+
+    //- Account & Personal
+    section.settings-section
+      h3.section-heading Account & Personal
+      p.section-description These settings control your profile information and how your account behaves.
+
+      form#account-form
+        //- User's name and username are used throughout the app.
+        .form-row
+          .form-group
+            label(for='settings-real-name') Full name
+            input#settings-real-name(type='text', name='real_name', placeholder='Your full name', required)
+          .form-group
+            label(for='settings-username') Username
+            input#settings-username(type='text', name='username', placeholder='username', required)
+        .form-row
+          .form-group
+            label(for='settings-email') Email address
+            input#settings-email(type='email', name='email', placeholder='you@example.com', required)
+            p.field-note Email changes require your current password for security.
+          .form-group
+            label(for='settings-current-password') Current password
+            input#settings-current-password(type='password', name='current_password', placeholder='••••••••', required)
+        .form-row
+          .form-group
+            label(for='settings-gender') Gender
+            select#settings-gender(name='gender')
+              option(value='') Prefer not to say
+              option(value='female') Female
+              option(value='male') Male
+              option(value='nonbinary') Non-binary
+              option(value='other') Other
+        .form-row
+          .form-group
+            label(for='settings-dob') Date of birth
+            input#settings-dob(type='date', name='date_of_birth')
+          .form-group
+            label(for='settings-units') Units preference
+            select#settings-units(name='units')
+              option(value='metric') Metric (kg, km, kcal)
+              option(value='imperial') Imperial (lb, miles, kcal)
+        .form-row
+          .form-group
+            label(for='settings-workout-view') Default workout view
+            select#settings-workout-view(name='workout_view')
+              option(value='list') List view
+              option(value='card') Card view
+          .form-group
+            label(for='settings-show-timer') Show timer by default
+            select#settings-show-timer(name='show_timer')
+              option(value='true') Yes
+              option(value='false') No
+        p#account-form-message.form-message(aria-live='polite')
+        button.btn.btn-primary(type='submit') Save Account Settings
+
+    //- Change Password
+    section.settings-section
+      h3.section-heading Change Password
+      p.section-description Update your password with verification of your current password.
+      form#password-form
+        .form-row
+          .form-group
+            label(for='current-password') Current password
+            input#current-password(type='password', name='current_password', required)
+        .form-row
+          .form-group
+            label(for='new-password') New password
+            input#new-password(type='password', name='new_password', required)
+          .form-group
+            label(for='confirm-password') Confirm new password
+            input#confirm-password(type='password', name='confirm_password', required)
+        p#password-form-message.form-message(aria-live='polite')
+        button.btn.btn-secondary(type='submit') Change Password
+
+    //- Notifications
+    section.settings-section
+      h3.section-heading Notifications
+      p.section-description Control what reminders and alerts you receive.
+      .settings-grid
+        .toggle-card
+          label(for='settings-workout-reminders') Workout reminders
+          input#settings-workout-reminders(type='checkbox')
+        .toggle-card
+          label(for='settings-goal-reminders') Goal reminders
+          input#settings-goal-reminders(type='checkbox')
+        .toggle-card
+          label(for='settings-social-notifications') Social activity notifications
+          input#settings-social-notifications(type='checkbox')
+        .toggle-card
+          label(for='settings-email-notifications') Email notifications
+          input#settings-email-notifications(type='checkbox')
+        .toggle-card
+          label(for='settings-push-notifications') Push notifications
+          input#settings-push-notifications(type='checkbox')
+
+    //- Privacy & Data
+    section.settings-section
+      h3.section-heading Privacy & Data
+      p.section-description Choose your default sharing settings and manage your exported data.
+      .privacy-options
+        .toggle-card
+          label(for='settings-auto-share') Auto-share workouts by default
+          input#settings-auto-share(type='checkbox')
+        .button-row
+          button.btn.btn-danger#delete-account-btn(type='button') Delete account
+      p.field-note Deleting your account removes your profile and all related data from the system.
+
+    //- Accessibility Toggles
+    section.settings-section
+      h3.section-heading Accessibility
+      p.section-description These options change how the UI is displayed and interacted with.
+      .settings-grid
+        .toggle-card
+          label(for='settings-large-text') Larger text
+          input#settings-large-text(type='checkbox')
+        .toggle-card
+          label(for='settings-system-text') Use system text size
+          input#settings-system-text(type='checkbox')
+        .toggle-card
+          label(for='settings-high-contrast') High contrast mode
+          input#settings-high-contrast(type='checkbox')
+        .toggle-card
+          label(for='settings-reduced-motion') Reduced motion
+          input#settings-reduced-motion(type='checkbox')
+        .toggle-card
+          label(for='settings-dark-mode') Dark mode
+          input#settings-dark-mode(type='checkbox')
+        .toggle-card
+          label(for='settings-haptic-feedback') Haptic feedback
+          input#settings-haptic-feedback(type='checkbox')
+        .toggle-card
+          label(for='settings-confirm-discard') Confirm before discarding workouts
+          input#settings-confirm-discard(type='checkbox')
+        .toggle-card
+          label(for='settings-simple-cards') Simple cards mode
+          input#settings-simple-cards(type='checkbox')
+      p.field-note These accessibility preferences are saved locally in your browser.
+    .settings-actions
+      button#export-data-btn.btn.btn-secondary(type='button') Export current settings
+      p#export-message.form-message(aria-live='polite')
+  script(src='/js/settings.js')

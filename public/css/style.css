@@ -612,6 +612,94 @@ select {
   padding: var(--space-xl) var(--space-xl);
 }
 
+/* ── SETTINGS PAGE STYLES ─────────────────────────────────── */
+.settings-page {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.settings-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-secondary);
+}
+
+.settings-hero-copy {
+  max-width: 760px;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.settings-hero-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.settings-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+
+.settings-summary-card,
+.toggle-card,
+.settings-actions,
+.settings-section {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.settings-summary-card h3,
+.settings-actions h3 {
+  margin-bottom: var(--space-sm);
+}
+
+.settings-sectional {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.toggle-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.toggle-card label {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.settings-actions button {
+  width: fit-content;
+}
+
+@media (max-width: 900px) {
+  .settings-hero {
+    flex-direction: column;
+  }
+
+  .settings-hero-actions {
+    width: 100%;
+  }
+}
+
 /* Individual sections (overview, exercise, diet, etc.) */
 .dash-section {
   display: flex;
