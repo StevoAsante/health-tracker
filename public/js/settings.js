@@ -324,6 +324,8 @@ function setupDeleteAccount() {
   });
 }
 
+// Load the user's accessibility and notification preferences from localStorage
+// This allows the settings page to reflect the user's current preferences when they visit
 function loadLocalPreferences() {
   try {
     return JSON.parse(localStorage.getItem('healthTrackerSettings')) || {};
@@ -332,19 +334,25 @@ function loadLocalPreferences() {
   }
 }
 
+// Save the user's accessibility and notification preferences to localStorage
+// This allows the settings page to persist the user's preferences across sessions in the browser
 function saveLocalPreferences(values) {
   const current = loadLocalPreferences();
   localStorage.setItem('healthTrackerSettings', JSON.stringify({ ...current, ...values }));
 }
 
+// Apply accessibility-related classes to the body based on the user's preferences
+// This allows the entire site to adapt to the user's accessibility needs based on their settings
 function applyAccessibilitySettings() {
   const prefs = loadLocalPreferences();
   const body = document.body;
 
   // Remove existing classes
+  // This ensures that only the currently selected preferences are applied, and old ones are cleared out
   body.classList.remove('large-text', 'high-contrast', 'dark-mode', 'reduced-motion', 'simple-cards', 'system-text');
 
   // Apply based on preferences
+  // Each of these classes would be defined in CSS to adjust the site's appearance and behavior according to the user's accessibility needs
   if (prefs.large_text) body.classList.add('large-text');
   if (prefs.high_contrast) body.classList.add('high-contrast');
   if (prefs.dark_mode) body.classList.add('dark-mode');
