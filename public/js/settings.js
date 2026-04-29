@@ -7,6 +7,7 @@
 // It also allows deleting the account through the backend.
 // ============================================================
 
+// Wait for the DOM to load before running any scripts
 document.addEventListener('DOMContentLoaded', () => {
   loadUserProfile();
   setupAccountForm();
@@ -19,8 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupHeaderNavigation();
   setupExportData();
   setupSavePreferencesButton();
+  applyAccessibilitySettings();
 });
 
+// Load the current user's profile data from the backend and populate the form fields
 async function loadUserProfile() {
   try {
     const response = await fetch('/api/auth/me');
@@ -49,6 +52,8 @@ async function loadUserProfile() {
   }
 }
 
+// Set up event listeners for the profile button in the header
+// This allows users to click their name in the header to go to settings from anywhere
 function setupProfileButton() {
   const profileButton = document.getElementById('profile-btn');
   if (!profileButton) return;
@@ -56,7 +61,7 @@ function setupProfileButton() {
     window.location.href = '/settings';
   });
 }
-
+// Set up the logout button to call the backend logout route and redirect to login page
 function setupLogoutButton() {
   const logoutBtn = document.getElementById('logout-btn');
   if (!logoutBtn) return;
@@ -66,13 +71,20 @@ function setupLogoutButton() {
     window.location.href = '/';
   });
 }
-
+// Set up the account settings form to submit changes to the backend
+// It requires the current password for confirmation and updates local preferences for toggles
 function setupAccountForm() {
   const form = document.getElementById('account-form');
   const message = document.getElementById('account-form-message');
 
   if (!form || !message) return;
 
+// When the account form is submitted, send a PUT request to update the profile
+// The backend will validate the current password and update the profile if valid
+// On success, it also saves the local preferences for toggles and shows a success message
+// On failure, it shows the error message returned by the backend or a generic error
+// Note: The backend route /api/auth/profile expects real_name, username, email, and current_password in the request body
+// The backend will handle validation and updating the user's profile in the database  
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     message.textContent = '';
@@ -109,7 +121,7 @@ function setupAccountForm() {
         message.textContent = result.error || 'Failed to save account settings.';
         return;
       }
-
+// Save local preferences for toggles and other settings that don't require backend storage
       saveLocalPreferences({ gender, dob, units, workoutView, showTimer });
       message.textContent = 'Account settings saved successfully.';
     } catch (error) {
@@ -141,7 +153,7 @@ function setupHeaderNavigation() {
     });
   });
 }
-
+// Set up the "Save Preferences" button to save all toggle settings to localStorage
 function setupSavePreferencesButton() {
   const button = document.getElementById('save-preferences-btn');
   const message = document.getElementById('preferences-message');
@@ -193,7 +205,9 @@ function setupExportData() {
       },
       preferences: loadLocalPreferences()
     };
-
+// Create a JSON blob and trigger a download of the settings as a .json file
+// This allows users to have a local backup of their settings, which they can re-import later if we add that feature
+// Note: This only exports the profile info currently on the form and the local preferences, not the full workout data or history
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -247,7 +261,8 @@ function setupPasswordForm() {
     }
   });
 }
-
+// Set up the toggle switches for various settings and save their state to localStorage
+// This allows users to have their preferences for notifications and accessibility saved locally in the browser
 function setupSettingsToggles() {
   const keys = [
     'workout_reminders',
@@ -279,10 +294,13 @@ function setupSettingsToggles() {
       const updated = loadLocalPreferences();
       updated[key] = input.checked;
       localStorage.setItem('healthTrackerSettings', JSON.stringify(updated));
+      applyAccessibilitySettings();
     });
   });
 }
 
+// Set up the delete account button to call the backend route to delete the user's account
+// It shows a confirmation dialog before proceeding and handles the response to either redirect or show an error
 function setupDeleteAccount() {
   const button = document.getElementById('delete-account-btn');
   if (!button) return;
@@ -317,4 +335,20 @@ function loadLocalPreferences() {
 function saveLocalPreferences(values) {
   const current = loadLocalPreferences();
   localStorage.setItem('healthTrackerSettings', JSON.stringify({ ...current, ...values }));
+}
+
+function applyAccessibilitySettings() {
+  const prefs = loadLocalPreferences();
+  const body = document.body;
+
+  // Remove existing classes
+  body.classList.remove('large-text', 'high-contrast', 'dark-mode', 'reduced-motion', 'simple-cards', 'system-text');
+
+  // Apply based on preferences
+  if (prefs.large_text) body.classList.add('large-text');
+  if (prefs.high_contrast) body.classList.add('high-contrast');
+  if (prefs.dark_mode) body.classList.add('dark-mode');
+  if (prefs.reduced_motion) body.classList.add('reduced-motion');
+  if (prefs.simple_cards) body.classList.add('simple-cards');
+  if (prefs.system_text) body.classList.add('system-text');
 }

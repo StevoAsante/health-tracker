@@ -67,10 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-  // ============================================================
-  // SECTION: User Profile
-  // ============================================================
+  // ── STEP 6: APPLY ACCESSIBILITY SETTINGS ────────────────
+  applyAccessibilitySettings();
 
   /**
    * loadUserProfile — asks the server for the logged-in user's details.
@@ -3295,5 +3293,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize the start workout modal
   setupStartWorkoutModal();
+
+  // ============================================================
+  // SECTION: Accessibility Settings
+  // ============================================================
+
+  /**
+   * loadLocalPreferences — loads accessibility preferences from localStorage
+   * and applies them to the page. Called on page load.
+   */
+  function loadLocalPreferences() {
+    try {
+      return JSON.parse(localStorage.getItem('healthTrackerSettings')) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  /**
+   * applyAccessibilitySettings — applies accessibility settings to the page.
+   * Reads the shared healthTrackerSettings object from localStorage.
+   */
+  function applyAccessibilitySettings() {
+    const settings = loadLocalPreferences();
+    const body = document.body;
+
+    body.classList.remove('large-text', 'high-contrast', 'dark-mode', 'reduced-motion', 'simple-cards', 'system-text');
+
+    if (settings.large_text) body.classList.add('large-text');
+    if (settings.high_contrast) body.classList.add('high-contrast');
+    if (settings.dark_mode) body.classList.add('dark-mode');
+    if (settings.reduced_motion) body.classList.add('reduced-motion');
+    if (settings.simple_cards) body.classList.add('simple-cards');
+    if (settings.system_text) body.classList.add('system-text');
+
+    const profileBtn = document.getElementById('profile-btn');
+    if (profileBtn) {
+      profileBtn.style.fontSize = settings.large_text ? '1.15rem' : '';
+    }
+  }
 
 }); // End of DOMContentLoaded
