@@ -147,7 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetSection === 'routines')  loadWorkoutRoutines();
     if (targetSection === 'social')    loadSocialFeed();
     if (targetSection === 'diet')      loadTodaysDiet();
-    if (targetSection === 'stats')     loadStats();
+    if (targetSection === 'stats' && window.StatsApp) {
+      // Refresh the performance dashboard whenever the user opens the Stats tab.
+      const currentPeriod = window.StatsApp.getState().selectedPeriod || 'week';
+      window.StatsApp.switchPeriod(currentPeriod);
+    }
     if (targetSection === 'groups')    loadGroups();
   }
 

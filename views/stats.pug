@@ -1,122 +1,563 @@
 //- ========================================================
-//- stats.pug — Statistics & Goals Section
+//- stats.pug — Performance Dashboard Section
 //- ========================================================
-//- This section shows detailed statistics and progress tracking:
-//- - Goals management: set and track fitness goals
-//- - Personal records: best lifts, times, distances
-//- - Visual charts: calories, sessions, workout time
-//- - Goal progress: how close you are to achieving goals
+//- Comprehensive stats page showing:
+//- 1) Time period switching (day/week/month/year/all-time)
+//- 2) Responsive KPI cards (workouts, time, calories, etc.)
+//- 3) Goals section with visual progress gauges
+//- 4) Trend charts for deeper insights (workouts & calories)
+//- 5) Responsive layout: mobile-first, desktop grid
 //- ========================================================
-section#section-stats.dash-section(aria-label='Statistics', hidden)
-  h2.section-heading Statistics
 
-  //- Goals + Records Side-by-Side
-  .stats-preview-grid
-    //- Left: Goals Management
-    #stats-goals-container.dashboard-card
-      h3.card-heading Your Goals
+section#section-stats.dash-section(aria-label='Performance Dashboard', hidden)
+  
+  //- ══ HEADER: Title & Period Toggle ══════════════════════════
+  .stats-header
+    h2.section-heading Performance Dashboard
+    
+    //- Time period selector buttons
+    .period-toggle
+      button.period-btn.active(data-period-btn='day', aria-label='View daily stats')
+        span Day
+      button.period-btn(data-period-btn='week', aria-label='View weekly stats')
+        span Week
+      button.period-btn(data-period-btn='month', aria-label='View monthly stats')
+        span Month
+      button.period-btn(data-period-btn='year', aria-label='View yearly stats')
+        span Year
+      button.period-btn(data-period-btn='allTime', aria-label='View all-time stats')
+        span All-Time
 
-      form#stats-goal-form(novalidate, style='margin-bottom: 2rem;')
-        .form-row
-          .form-group
-            label(for='stats-goal-type') Goal type
-            select#stats-goal-type(name='goal_type', required)
-              option(value='') Select type
-              option(value='weight') Target weight (kg)
-              option(value='run_distance') Run distance (km)
-              option(value='calories_burned') Calories burned / week
-              option(value='steps') Daily steps
-              option(value='workout_sessions') Workouts per week
+  //- Error message display
+  #stats-error-message.alert.alert-error(style='display: none;', role='alert', aria-live='polite')
+  
+  //- Loading indicator
+  #stats-loading-spinner.stats-spinner(style='display: none;')
+    div.spinner-ring
+  
+  //- ══ KPI CARDS SECTION (Responsive Grid) ════════════════════
+  .stats-section
+    h3.subsection-heading Key Metrics
+    #kpi-cards-container.kpi-cards-grid
+      //- Cards render here via JavaScript
 
-          .form-group
-            label(for='stats-goal-target') Target value
-            input#stats-goal-target(type='number', name='target_value', min='0', step='0.1', placeholder='70', required)
+  //- ══ TWO-COLUMN LAYOUT: Goals + Charts ═══════════════════════
+  .stats-two-column
+    
+    //- Left column: Goals with gauges
+    .stats-column.goals-column
+      h3.subsection-heading Active Goals
+      #goals-section-container.goals-container
+        //- Goals render here via JavaScript
 
-          .form-group
-            label(for='stats-goal-date') Target date
-            input#stats-goal-date(type='date', name='target_date', required)
+    //- Right column: Trend charts stacked
+    .stats-column.charts-column
+      //- Workouts trend chart
+      .chart-section
+        h4.chart-title Workouts Trend
+        .chart-container
+          canvas#chart-workouts-trend(role='img', aria-label='Workouts per week trend chart')
+      
+      //- Calories trend chart
+      .chart-section
+        h4.chart-title Calories Trend
+        .chart-container
+          canvas#chart-calories-trend(role='img', aria-label='Calories burned vs consumed trend')
 
-        .form-group
-          label(for='stats-goal-description')
-            | Description 
-            span.hint (optional)
-          input#stats-goal-description(type='text', name='description', placeholder='e.g. Get to 70kg before summer')
+//- ═══════════════════════════════════════════════════════════════
+//- Styles for stats page — responsive and accessible
+//- ═══════════════════════════════════════════════════════════════
 
-        p#stats-goal-message.form-message(aria-live='polite')
-        button.btn.btn-primary(type='submit') Set Goal
+style.
+  /* Stats section container */
+  #section-stats {
+    padding: 2rem 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 
-      //- Active Goals List
-      div(style='border-top: 1px solid rgba(0,0,0,0.1); padding-top: 1rem;')
-        h4.card-heading(style='font-size: 0.95rem; margin-bottom: 1rem;') Active Goals
-        ul#stats-goals-list.goals-list(aria-label='Your goals')
-          li.empty-state No goals set yet. Set your first goal above!
+  /* Header with title and period toggle */
+  .stats-header {
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
 
-    //- Right: Personal Records
-    #stats-records-container.dashboard-card
-      h3.card-heading Personal Records
+  .section-heading {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+  }
 
-      .records-controls(style='margin-bottom: 1.5rem;')
-        .form-row
-          .form-group
-            label(for='stats-records-exercise-filter') Filter by exercise
-            select#stats-records-exercise-filter
-              option(value='') All exercises
-          .form-group
-            label(for='stats-records-type-filter') Record type
-            select#stats-records-type-filter
-              option(value='') All types
-              option(value='weight') Max Weight
-              option(value='reps') Max Reps
-              option(value='volume') Max Volume
-              option(value='one_rep_max') 1RM
+  /* Period toggle buttons */
+  .period-toggle {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
 
-      #stats-personal-records-list.records-list
-        .empty-state No personal records yet. Start lifting to set your first PR!
+  .period-btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    color: #666;
+  }
 
-  //- Visual Gauge Cards
-  .stats-grid-visual
-    .stat-gauge-card
-      h3.gauge-title Calories Burned
-      .gauge-container
-        canvas#chart-calories-burned
-        .gauge-text
-          p.gauge-value#gauge-cal-burned 0
-          p.gauge-unit kcal
+  .period-btn:hover {
+    border-color: #c8ff00;
+    color: #333;
+  }
 
-    .stat-gauge-card
-      h3.gauge-title Exercise Sessions
-      .gauge-container
-        canvas#chart-sessions
-        .gauge-text
-          p.gauge-value#gauge-sessions 0
-          p.gauge-unit sessions
+  .period-btn.active {
+    background: #c8ff00;
+    border-color: #c8ff00;
+    color: #000;
+    box-shadow: 0 4px 12px rgba(200, 255, 0, 0.3);
+  }
 
-    .stat-gauge-card
-      h3.gauge-title Calories Consumed
-      .gauge-container
-        canvas#chart-calories-consumed
-        .gauge-text
-          p.gauge-value#gauge-cal-consumed 0
-          p.gauge-unit kcal
+  /* Error and loading states */
+  .alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
 
-    .stat-gauge-card
-      h3.gauge-title Workout Time
-      .gauge-container
-        canvas#chart-workout-time
-        .gauge-text
-          p.gauge-value#gauge-minutes 0
-          p.gauge-unit mins
+  .alert-error {
+    background: #ffe5e5;
+    color: #c33;
+    border-left: 4px solid #c33;
+  }
 
-  //- Weekly Activity Chart
-  .dashboard-card
-    h3.card-heading Weekly Activity Overview
-    .chart-container(style='position: relative; height: 300px;')
-      canvas#chart-weekly-activity
+  .stats-spinner {
+    text-align: center;
+    padding: 2rem;
+  }
 
-  //- Goal Progress Section
-  .dashboard-card
-    h3.card-heading Goal Progress
-    #goal-progress-container
-      p.empty-state No active goals to track progress against.
+  .spinner-ring {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #c8ff00;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
 
-  p#stats-loading.stats-note Loading your stats...
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Subsection headings */
+  .subsection-heading {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  /* ── KPI CARDS GRID (Responsive) ────────────────────── */
+  .stats-section {
+    margin-bottom: 3rem;
+  }
+
+  .kpi-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .kpi-card {
+    background: #fff;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .kpi-card:hover {
+    border-color: #c8ff00;
+    box-shadow: 0 4px 12px rgba(200, 255, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .kpi-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+  }
+
+  .kpi-content {
+    flex: 1;
+  }
+
+  .kpi-title {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .kpi-value {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .kpi-unit {
+    font-size: 0.9rem;
+    color: #999;
+    font-weight: 600;
+    margin-left: 0.25rem;
+  }
+
+  /* Empty state */
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: #999;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 2px dashed #ddd;
+  }
+
+  .hint {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  /* ── TWO-COLUMN LAYOUT ─────────────────────────────── */
+  .stats-two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 1024px) {
+    .stats-two-column {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .stats-column {
+    background: #fff;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  /* Goals column */
+  .goals-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .goal-item {
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .goal-item:hover {
+    background: #fff;
+    border-color: #c8ff00;
+    box-shadow: 0 4px 12px rgba(200, 255, 0, 0.1);
+  }
+
+  .goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .goal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .goal-status {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .goal-status.achieved {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .goal-content {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+
+  .goal-gauge {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+  }
+
+  .gauge-circle {
+    width: 100%;
+    height: 100%;
+  }
+
+  .gauge-progress {
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .gauge-percentage {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .goal-details {
+    flex: 1;
+  }
+
+  .goal-progress {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .goal-type {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .goal-deadline {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.85rem;
+    color: #999;
+  }
+
+  /* Charts column */
+  .chart-section {
+    margin-bottom: 2rem;
+  }
+
+  .chart-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .chart-title {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .chart-container {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: relative;
+    height: 300px;
+  }
+
+  .chart-container canvas {
+    max-height: 300px;
+  }
+
+  /* ── MOBILE RESPONSIVE ─────────────────────────────── */
+  @media (max-width: 768px) {
+    #section-stats {
+      padding: 1.5rem 1rem;
+    }
+
+    .stats-header {
+      gap: 1rem;
+    }
+
+    .section-heading {
+      font-size: 1.5rem;
+    }
+
+    .period-toggle {
+      gap: 0.5rem;
+    }
+
+    .period-btn {
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+    }
+
+    .kpi-cards-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .kpi-card {
+      padding: 1rem;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .kpi-icon {
+      font-size: 2rem;
+    }
+
+    .kpi-value {
+      font-size: 1.5rem;
+    }
+
+    .stats-two-column {
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-column {
+      padding: 1rem;
+    }
+
+    .goal-content {
+      gap: 1rem;
+    }
+
+    .gauge-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .gauge-percentage {
+      font-size: 1.5rem;
+    }
+
+    .goal-details {
+      flex: 1;
+    }
+
+    .chart-container {
+      height: 250px;
+      padding: 1rem;
+    }
+  }
+
+  /* ── DARK MODE & ACCESSIBILITY ──────────────────────── */
+  body.dark-mode #section-stats {
+    --bg-primary: #000;
+    --text-primary: #fff;
+    --border-light: #333;
+    --bg-card: #1a1a1a;
+  }
+
+  body.dark-mode .section-heading,
+  body.dark-mode .subsection-heading,
+  body.dark-mode .goal-title {
+    color: var(--text-primary);
+  }
+
+  body.dark-mode .stats-column,
+  body.dark-mode .goal-item {
+    background: var(--bg-card);
+    border-color: var(--border-light);
+  }
+
+  body.dark-mode .goal-item {
+    background: #111;
+  }
+
+  body.dark-mode .period-btn {
+    background: #222;
+    border-color: #333;
+    color: #fff;
+  }
+
+  body.dark-mode .period-btn:hover {
+    border-color: #c8ff00;
+  }
+
+  body.dark-mode .period-btn.active {
+    background: #c8ff00;
+    color: #000;
+  }
+
+  /* Accessibility: Large text mode */
+  body.large-text .section-heading {
+    font-size: 2.2rem;
+  }
+
+  body.large-text .subsection-heading {
+    font-size: 1.5rem;
+  }
+
+  body.large-text .period-btn {
+    padding: 0.9rem 1.8rem;
+    font-size: 1.05rem;
+  }
+
+  body.large-text .kpi-card {
+    padding: 1.75rem;
+  }
+
+  body.large-text .kpi-value {
+    font-size: 2rem;
+  }
+
+  /* Accessibility: High contrast mode */
+  body.high-contrast .period-btn {
+    border-width: 3px;
+    background: #000;
+    color: #fff;
+    border-color: #fff;
+  }
+
+  body.high-contrast .period-btn.active {
+    background: #ffeb3b;
+    color: #000;
+    border-color: #000;
+  }
+
+  body.high-contrast .stats-column {
+    border-width: 3px;
+    border-color: #fff;
+  }
+
+  body.high-contrast .goal-item {
+    border-width: 2px;
+    border-color: #fff;
+  }

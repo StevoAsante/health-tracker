@@ -89,6 +89,7 @@ const routineRoutes  = require('./routes/routines');
 const workoutRoutes  = require('./routes/workouts');
 const recordRoutes   = require('./routes/records');
 const socialRoutes   = require('./routes/social');
+const statsRoutes    = require('./routes/stats');
 
 app.use('/api/auth',     authRoutes);      // /api/auth/login, /api/auth/register, etc.
 app.use('/api/exercise', exerciseRoutes);  // /api/exercise/log, /api/exercise/history, etc.
@@ -100,6 +101,7 @@ app.use('/api/routines', routineRoutes);   // /api/routines/list, /api/routines/
 app.use('/api/workouts', workoutRoutes);   // /api/workouts/start, etc.
 app.use('/api/records',  recordRoutes);    // /api/records/list, /api/records/stats, etc.
 app.use('/api/social',   socialRoutes);    // /api/social/feed, /api/social/posts, etc.
+app.use('/api/stats',    statsRoutes);     // /api/stats/summary, /api/stats/chart, etc.
 
 // ── PAGE ROUTES ──────────────────────────────────────────
 // These routes serve the actual HTML pages.
