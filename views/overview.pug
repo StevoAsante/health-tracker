@@ -1,0 +1,46 @@
+//- ========================================================
+//- overview.pug — Overview/Summary Section
+//- ========================================================
+//- This is the first tab users see when they open the dashboard.
+//- It shows a summary of their activity: calories burned/consumed,
+//- total sessions, active goals, and recent workouts/meals.
+//- Data is loaded dynamically by dashboard.js
+//- ========================================================
+section#section-overview.dash-section.active(aria-label='Overview')
+  .overview-header
+    h2.section-heading#overview-greeting Welcome back!
+    p.motivation-quote#overview-motivation Every workout counts towards your goals!
+
+  .stats-grid
+    article.stat-card(aria-label='Calories burned all time')
+      p.stat-label Calories Burned
+      p.stat-value#overview-cal-burned —
+      p.stat-unit kcal
+
+    article.stat-card(aria-label='Calories consumed all time')
+      p.stat-label Calories Consumed
+      p.stat-value#overview-cal-consumed —
+      p.stat-unit kcal
+
+    article.stat-card(aria-label='Exercise sessions all time')
+      p.stat-label Total Sessions
+      p.stat-value#overview-sessions —
+      p.stat-unit logged
+
+    article.stat-card.accent(aria-label='Active goals')
+      p.stat-label Active Goals
+      p.stat-value#overview-goals —
+      p.stat-unit in progress
+
+  .overview-content-grid
+    .dashboard-card
+      h3.card-heading Your Workouts
+      #exercise-filter-buttons.filter-buttons-container
+      ul#overview-exercise-list.activity-list(aria-label='Exercise history')
+        li.empty-state No exercise logged yet — get moving!
+
+    .dashboard-card
+      h3.card-heading Your Meals
+      #meal-filter-buttons.filter-buttons-container
+      ul#overview-meal-list.activity-list(aria-label='Meal history')
+        li.empty-state No meals logged yet.

@@ -1,0 +1,94 @@
+//- ========================================================
+//- exercise.pug — Exercise Logging Section
+//- ========================================================
+//- This section lets users log their workouts. It has two modes:
+//- 1. Cardio: running, cycling, swimming, etc. (duration + distance)
+//- 2. Strength: weightlifting (sets, reps, weight, RPE)
+//- Users can also select exercises from the library
+//- ========================================================
+section#section-exercise.dash-section(aria-label='Log Exercise', hidden)
+  h2.section-heading Log Exercise
+
+  .dashboard-card
+    //- Category toggle: Cardio or Strength
+    .exercise-tabs(role='group', aria-label='Exercise category')
+      button.exercise-tab-btn.active(data-category='cardio')#toggle-cardio Cardio
+      button.exercise-tab-btn(data-category='strength')#toggle-strength Strength
+
+    form#exercise-form(novalidate)
+      input(type='hidden', id='exercise-id', name='exercise_id')
+
+      .form-row
+        .form-group
+          label(for='ex-type') Activity type
+          select#ex-type(name='activity_type', required)
+            option(value='') Select type
+            option(value='Running') Running
+            option(value='Cycling') Cycling
+            option(value='Swimming') Swimming
+            option(value='Walking') Walking
+            option(value='HIIT') HIIT
+            option(value='Rowing') Rowing
+            option(value='Bench Press') Bench Press
+            option(value='Squat') Squat
+            option(value='Deadlift') Deadlift
+            option(value='Overhead Press') Overhead Press
+            option(value='Pull Ups') Pull Ups
+            option(value='Custom') Custom
+
+        .form-group
+          label(for='ex-name') Exercise name
+          input#ex-name(type='text', name='activity_name', placeholder='e.g. Morning Run', required)
+
+      //- Cardio fields
+      #cardio-fields.conditional-fields
+        .form-row
+          .form-group
+            label(for='ex-duration') Duration (mins)
+            input#ex-duration(type='number', name='duration_mins', min='1', placeholder='30')
+          .form-group
+            label(for='ex-distance') Distance (km)
+            input#ex-distance(type='number', name='distance_km', min='0', step='0.1', placeholder='5.0')
+
+      //- Strength fields
+      #strength-fields.conditional-fields(hidden)
+        .form-row
+          .form-group
+            label(for='ex-sets') Sets
+            input#ex-sets(type='number', name='sets', min='1', max='100', placeholder='3')
+          .form-group
+            label(for='ex-reps') Reps per set
+            input#ex-reps(type='number', name='reps', min='1', max='200', placeholder='10')
+          .form-group
+            label(for='ex-weight') Weight (kg)
+            input#ex-weight(type='number', name='weight_kg_used', min='0', step='0.5', placeholder='60.0')
+
+        .form-row
+          .form-group
+            label(for='ex-rpe')
+              | RPE 
+              span.hint (Rate of Perceived Exertion, 1-10)
+            input#ex-rpe(type='number', name='rpe', min='1', max='10', placeholder='7')
+          .form-group
+            label(for='ex-exercise-select') Exercise from Library
+            select#ex-exercise-select(name='exercise_id')
+              option(value='') Select from library (optional)
+
+        .form-group
+          label(for='ex-notes') Notes
+          textarea#ex-notes(name='notes', rows='2', placeholder='How did it feel? Any observations...')
+
+      .form-group
+        label(for='ex-calories')
+          | Calories burned 
+          span.hint (estimate)
+        input#ex-calories(type='number', name='calories_burned', min='0', placeholder='250')
+
+      p#exercise-message.form-message(aria-live='polite')
+
+      button.btn.btn-primary#exercise-submit-btn(type='submit') Log Exercise
+
+  .dashboard-card
+    h3.card-heading Recent History
+    ul#exercise-history-list.activity-list(aria-label='Exercise history')
+      li.empty-state No exercise recorded yet.

@@ -1,0 +1,31 @@
+//- ========================================================
+//- routines.pug — Workout Routines Section
+//- ========================================================
+//- This section manages workout routines:
+//- - Create custom workout routines with multiple exercises
+//- - Browse public routines created by the community
+//- - Start workouts from saved routines
+//- - Make routines public for others to use
+//- Helps users structure their training programs
+//- ========================================================
+section#section-routines.dash-section(aria-label='Workout Routines', hidden)
+  h2.section-heading Workout Routines
+
+  //- Private/Custom Routines Section
+  .dashboard-card
+    h3.card-heading My Routines
+    p.section-description Create and manage your own custom workout routines.
+
+    .routine-controls
+      button.btn.btn-primary#create-routine-btn Create New Routine
+
+    #private-routines-list.routines-list
+      .empty-state No custom routines yet. Create your first workout routine!
+
+  //- Public Routines Section
+  .dashboard-card
+    h3.card-heading Public Routines
+    p.section-description Browse pre-built workout routines created by the community. Perfect for getting started or trying new programs.
+
+    #public-routines-list.routines-list
+      .empty-state Loading public routines...

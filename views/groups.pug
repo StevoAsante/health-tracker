@@ -1,0 +1,40 @@
+//- ========================================================
+//- groups.pug — Groups & Social Features Section
+//- ========================================================
+//- This section handles group management:
+//- - Create groups with invite codes
+//- - Join existing groups using invite codes
+//- - View and manage your group memberships
+//- Groups allow sharing workouts and competing with friends
+//- ========================================================
+section#section-groups.dash-section(aria-label='Groups', hidden)
+  h2.section-heading Groups
+
+  .dashboard-card
+    h3.card-heading Create a Group
+    form#create-group-form(novalidate)
+      .form-row
+        .form-group
+          label(for='group-name') Group name
+          input#group-name(type='text', name='name', placeholder='Morning Crew', required)
+
+      p#create-group-message.form-message(aria-live='polite')
+      button.btn.btn-primary(type='submit') Create Group
+
+    #invite-code-display.invite-code-box(hidden, aria-live='polite')
+
+  .dashboard-card
+    h3.card-heading Join a Group
+    form#join-group-form(novalidate)
+      .form-row
+        .form-group
+          label(for='join-invite-code') Invite code
+          input#join-invite-code(type='text', name='invite_code', placeholder='A3B9KX', maxlength='8', required)
+
+      p#join-group-message.form-message(aria-live='polite')
+      button.btn.btn-secondary(type='submit') Join Group
+
+  .dashboard-card
+    h3.card-heading My Groups
+    ul#groups-list.groups-list(aria-label='Groups you belong to')
+      li.empty-state You haven't joined any groups yet.

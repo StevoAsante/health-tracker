@@ -1,0 +1,57 @@
+//- ========================================================
+//- layout.pug — Base Template for Dashboard Pages
+//- ========================================================
+//- This is the main layout template that other pages extend.
+//- It contains the shared header, navigation, and footer.
+//- Other pages use "extends layout" and put their content in "block content"
+//- ========================================================
+
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title= pageTitle || 'Health Tracker — Dashboard'
+    link(rel='stylesheet', href='/css/style.css')
+
+  body.dashboard-page
+
+    //- ========================================================
+    //- HEADER SECTION — Top navigation bar
+    //- ========================================================
+    //- This header appears on every dashboard page
+    //- It contains the app logo, navigation buttons, and user menu
+    header.app-header
+      .header-brand
+        span.logo-mark-sm(aria-hidden='true') HT
+        span.header-app-name Health Tracker
+
+      //- Main navigation buttons — clicking these shows/hides sections
+      nav.header-nav(aria-label='Main navigation')
+        button.nav-btn.active(data-section='overview', aria-current='page') Overview
+        button.nav-btn(data-section='exercise') Exercise
+        button.nav-btn(data-section='library') Library
+        button.nav-btn(data-section='routines') Routines
+        button.nav-btn(data-section='social') Social
+        button.nav-btn(data-section='diet') Diet
+        button.nav-btn(data-section='stats') Stats
+
+      //- User menu — shows greeting and logout button
+      .header-user
+        span#user-greeting.user-greeting Hey, —
+        button.btn.btn-outline.btn-sm#logout-btn Log Out
+
+    //- ========================================================
+    //- MAIN CONTENT AREA — Where page content goes
+    //- ========================================================
+    //- Each page that extends this layout puts its content here
+    //- This is defined by "block content" in child templates
+    main.dashboard-main
+      block content
+
+    //- ========================================================
+    //- SCRIPTS — JavaScript files loaded at bottom
+    //- ========================================================
+    //- Chart.js for graphs, dashboard.js for page functionality
+    script(src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
+    script(src='/js/dashboard.js')

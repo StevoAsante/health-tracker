@@ -1,0 +1,103 @@
+//- ========================================================
+//- diet.pug — Diet & Nutrition Section
+//- ========================================================
+//- This section has two main functions:
+//- 1. Log Meal: Search and log food items with calories/macros
+//- 2. Add Custom Food: Create your own food entries
+//- Shows macronutrient breakdown and daily calorie totals
+//- ========================================================
+section#section-diet.dash-section(aria-label='Log Diet', hidden)
+  h2.section-heading Diet & Nutrition
+
+  nav.diet-tabs(role='tablist', aria-label='Diet options')
+    button.diet-tab-btn.active#tab-log-meal(role='tab', aria-selected='true', aria-controls='panel-log-meal', data-tab='log-meal') Log Meal
+    button.diet-tab-btn#tab-custom-food(role='tab', aria-selected='false', aria-controls='panel-custom-food', data-tab='custom-food') Add Custom Food
+
+  //- Log Meal Panel
+  #panel-log-meal.diet-panel.active(role='tabpanel', aria-labelledby='tab-log-meal')
+    .dashboard-card
+      form#diet-form(novalidate)
+        .form-row
+          .form-group
+            label(for='diet-food-name') Food name
+            input#diet-food-name(type='text', name='food_name', placeholder='Start typing to search foods...', autocomplete='off', required)
+            #food-suggestions-dropdown.suggestions-dropdown(style='display: none;')
+
+          .form-group
+            label(for='diet-meal-type') Meal
+            select#diet-meal-type(name='meal_type', required)
+              option(value='') Select meal
+              option(value='breakfast') Breakfast
+              option(value='lunch') Lunch
+              option(value='dinner') Dinner
+              option(value='snack') Snack
+
+        .form-row
+          .form-group
+            label(for='diet-calories') Calories (kcal)
+            input#diet-calories(type='number', name='calories', min='0', placeholder='350', required)
+          .form-group
+            label(for='diet-quantity') Quantity / portions
+            input#diet-quantity(type='number', name='quantity', min='0.1', step='0.1', value='1', placeholder='1')
+
+        //- Macronutrient breakdown
+        #macronutrients-display.macronutrients-display(style='display: none;')
+          h4 Macronutrient Breakdown
+          .form-row
+            .form-group
+              label Protein
+              input#diet-protein(type='text', readonly, placeholder='0g')
+            .form-group
+              label Carbs
+              input#diet-carbs(type='text', readonly, placeholder='0g')
+            .form-group
+              label Fat
+              input#diet-fat(type='text', readonly, placeholder='0g')
+            .form-group
+              label Fibre
+              input#diet-fibre(type='text', readonly, placeholder='0g')
+
+        output#calorie-goal-feedback.goal-feedback(aria-live='polite')
+
+        p#diet-message.form-message(aria-live='polite')
+
+        button.btn.btn-primary#diet-submit-btn(type='submit') Log Meal
+
+  //- Custom Food Panel
+  #panel-custom-food.diet-panel(role='tabpanel', aria-labelledby='tab-custom-food', style='display: none;')
+    .dashboard-card
+      h3.card-heading Add Custom Food
+      form#custom-food-form(novalidate)
+        .form-row
+          .form-group
+            label(for='custom-food-name') Food name
+            input#custom-food-name(type='text', name='name', placeholder='My Protein Shake', required)
+          .form-group
+            label(for='custom-food-calories') Calories per serving
+            input#custom-food-calories(type='number', name='calories', min='0', placeholder='300', required)
+
+        .form-row
+          .form-group
+            label(for='custom-food-protein') Protein (g)
+            input#custom-food-protein(type='number', name='protein_g', min='0', step='0.1', placeholder='25.0')
+          .form-group
+            label(for='custom-food-carbs') Carbs (g)
+            input#custom-food-carbs(type='number', name='carbs_g', min='0', step='0.1', placeholder='30.0')
+
+        .form-row
+          .form-group
+            label(for='custom-food-fat') Fat (g)
+            input#custom-food-fat(type='number', name='fat_g', min='0', step='0.1', placeholder='10.0')
+          .form-group
+            label(for='custom-food-fibre') Fibre (g)
+            input#custom-food-fibre(type='number', name='fibre_g', min='0', step='0.1', placeholder='2.0')
+
+        p#custom-food-message.form-message(aria-live='polite')
+        button.btn.btn-secondary(type='submit') Add to My Foods
+
+  //- Today's meals list
+  .dashboard-card
+    h3.card-heading Today's Food Log
+    p.calorie-total Daily total: <strong id="diet-daily-total">0</strong> kcal
+    ul#diet-today-list.activity-list(aria-label="Today's food entries")
+      li.empty-state No meals logged today.

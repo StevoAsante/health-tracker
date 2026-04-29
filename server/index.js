@@ -35,6 +35,10 @@ app.use(express.json());
 // Parse form data — handles classic HTML form submissions.
 app.use(express.urlencoded({ extended: true }));
 
+// Set Pug as the view engine for rendering templates
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, '../views'));
+
 // Serve everything in the 'public' folder as static files.
 // public/css/style.css becomes accessible at /css/style.css
 // public/index.html becomes accessible at /index.html
@@ -114,7 +118,7 @@ app.get('/dashboard', (req, res) => {
   if (!req.session.userId) {
     return res.redirect('/');
   }
-  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+  res.render('dashboard', { pageTitle: 'Health Tracker — Dashboard' });
 });
 
 // ── 404 HANDLER ──────────────────────────────────────────

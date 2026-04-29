@@ -1,0 +1,46 @@
+//- ========================================================
+//- library.pug — Exercise Library Section
+//- ========================================================
+//- This section provides a searchable database of exercises:
+//- - Browse exercises by name, muscle group, or equipment
+//- - Filter by cardio, strength, or specific muscle groups
+//- - Select exercises to use in your workout logging
+//- Helps users discover new exercises and maintain consistency
+//- ========================================================
+section#section-library.dash-section(aria-label='Exercise Library', hidden)
+  h2.section-heading Exercise Library
+
+  .dashboard-card
+    .library-controls
+      .form-row
+        .form-group
+          label(for='library-search') Search exercises
+          input#library-search(type='text', placeholder='Search by name, muscle group, or equipment...')
+        .form-group
+          label(for='library-muscle-filter') Muscle group
+          select#library-muscle-filter
+            option(value='') All muscles
+            option(value='Arms') Arms
+            option(value='Back') Back
+            option(value='Cardio') Cardio
+            option(value='Calves') Calves
+            option(value='Chest') Chest
+            option(value='Core') Core
+            option(value='Core/Cardio') Core/Cardio
+            option(value='Full Body') Full Body
+            option(value='Glutes') Glutes
+            option(value='Legs') Legs
+            option(value='Shoulders') Shoulders
+        .form-group
+          label(for='library-equipment-filter') Equipment
+          select#library-equipment-filter
+            option(value='') All equipment
+            option(value='Barbell') Barbell
+            option(value='Bodyweight') Bodyweight
+            option(value='Dumbbell') Dumbbell
+            option(value='Cable Machine') Cable Machine
+            option(value='Machine') Machine
+            option(value='Kettlebell') Kettlebell
+
+    #exercise-library-grid.exercise-grid
+      .empty-state Loading exercises...

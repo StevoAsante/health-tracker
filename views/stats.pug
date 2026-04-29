@@ -1,0 +1,122 @@
+//- ========================================================
+//- stats.pug — Statistics & Goals Section
+//- ========================================================
+//- This section shows detailed statistics and progress tracking:
+//- - Goals management: set and track fitness goals
+//- - Personal records: best lifts, times, distances
+//- - Visual charts: calories, sessions, workout time
+//- - Goal progress: how close you are to achieving goals
+//- ========================================================
+section#section-stats.dash-section(aria-label='Statistics', hidden)
+  h2.section-heading Statistics
+
+  //- Goals + Records Side-by-Side
+  .stats-preview-grid
+    //- Left: Goals Management
+    #stats-goals-container.dashboard-card
+      h3.card-heading Your Goals
+
+      form#stats-goal-form(novalidate, style='margin-bottom: 2rem;')
+        .form-row
+          .form-group
+            label(for='stats-goal-type') Goal type
+            select#stats-goal-type(name='goal_type', required)
+              option(value='') Select type
+              option(value='weight') Target weight (kg)
+              option(value='run_distance') Run distance (km)
+              option(value='calories_burned') Calories burned / week
+              option(value='steps') Daily steps
+              option(value='workout_sessions') Workouts per week
+
+          .form-group
+            label(for='stats-goal-target') Target value
+            input#stats-goal-target(type='number', name='target_value', min='0', step='0.1', placeholder='70', required)
+
+          .form-group
+            label(for='stats-goal-date') Target date
+            input#stats-goal-date(type='date', name='target_date', required)
+
+        .form-group
+          label(for='stats-goal-description')
+            | Description 
+            span.hint (optional)
+          input#stats-goal-description(type='text', name='description', placeholder='e.g. Get to 70kg before summer')
+
+        p#stats-goal-message.form-message(aria-live='polite')
+        button.btn.btn-primary(type='submit') Set Goal
+
+      //- Active Goals List
+      div(style='border-top: 1px solid rgba(0,0,0,0.1); padding-top: 1rem;')
+        h4.card-heading(style='font-size: 0.95rem; margin-bottom: 1rem;') Active Goals
+        ul#stats-goals-list.goals-list(aria-label='Your goals')
+          li.empty-state No goals set yet. Set your first goal above!
+
+    //- Right: Personal Records
+    #stats-records-container.dashboard-card
+      h3.card-heading Personal Records
+
+      .records-controls(style='margin-bottom: 1.5rem;')
+        .form-row
+          .form-group
+            label(for='stats-records-exercise-filter') Filter by exercise
+            select#stats-records-exercise-filter
+              option(value='') All exercises
+          .form-group
+            label(for='stats-records-type-filter') Record type
+            select#stats-records-type-filter
+              option(value='') All types
+              option(value='weight') Max Weight
+              option(value='reps') Max Reps
+              option(value='volume') Max Volume
+              option(value='one_rep_max') 1RM
+
+      #stats-personal-records-list.records-list
+        .empty-state No personal records yet. Start lifting to set your first PR!
+
+  //- Visual Gauge Cards
+  .stats-grid-visual
+    .stat-gauge-card
+      h3.gauge-title Calories Burned
+      .gauge-container
+        canvas#chart-calories-burned
+        .gauge-text
+          p.gauge-value#gauge-cal-burned 0
+          p.gauge-unit kcal
+
+    .stat-gauge-card
+      h3.gauge-title Exercise Sessions
+      .gauge-container
+        canvas#chart-sessions
+        .gauge-text
+          p.gauge-value#gauge-sessions 0
+          p.gauge-unit sessions
+
+    .stat-gauge-card
+      h3.gauge-title Calories Consumed
+      .gauge-container
+        canvas#chart-calories-consumed
+        .gauge-text
+          p.gauge-value#gauge-cal-consumed 0
+          p.gauge-unit kcal
+
+    .stat-gauge-card
+      h3.gauge-title Workout Time
+      .gauge-container
+        canvas#chart-workout-time
+        .gauge-text
+          p.gauge-value#gauge-minutes 0
+          p.gauge-unit mins
+
+  //- Weekly Activity Chart
+  .dashboard-card
+    h3.card-heading Weekly Activity Overview
+    .chart-container(style='position: relative; height: 300px;')
+      canvas#chart-weekly-activity
+
+  //- Goal Progress Section
+  .dashboard-card
+    h3.card-heading Goal Progress
+    #goal-progress-container
+      p.empty-state No active goals to track progress against.
+
+  p#stats-loading.stats-note Loading your stats...

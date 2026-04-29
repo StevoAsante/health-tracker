@@ -1,0 +1,62 @@
+//- ========================================================
+//- social.pug — Social Feed & Communities Section
+//- ========================================================
+//- This section handles social features:
+//- - Feed: View workout posts from friends/following
+//- - Communities: Join fitness communities and groups
+//- - Share workouts and get motivation from others
+//- - Create and manage fitness communities
+//- Builds a supportive fitness community
+//- ========================================================
+section#section-social.dash-section(aria-label='Social Feed', hidden)
+  h2.section-heading Social
+
+  //- Social tabs
+  nav.social-tabs(role='tablist', aria-label='Social options')
+    button.social-tab-btn.active#tab-social-feed(role='tab', aria-selected='true', aria-controls='panel-social-feed', data-tab='social-feed') Feed
+    button.social-tab-btn#tab-communities(role='tab', aria-selected='false', aria-controls='panel-communities', data-tab='communities') Communities
+
+  //- Social Feed Panel
+  #panel-social-feed.social-panel.active(role='tabpanel', aria-labelledby='tab-social-feed')
+    .dashboard-card
+      .social-controls
+        button.btn.btn-primary#create-post-btn Share Workout
+        .feed-filters
+          button.feed-filter.active(data-filter='all') All Posts
+          button.feed-filter(data-filter='following') Following
+          button.feed-filter(data-filter='mine') My Posts
+
+      #social-feed.social-feed
+        .empty-state Loading social feed...
+
+  //- Communities Panel
+  #panel-communities.social-panel(role='tabpanel', aria-labelledby='tab-communities', style='display: none;')
+    .dashboard-card
+      h3.card-heading Communities
+      p.section-description Join fitness communities to connect with like-minded people and share your progress.
+
+      .community-controls
+        button.btn.btn-primary#create-community-btn Create Community
+        button.btn.btn-secondary#join-community-btn Join Community
+
+      //- Create Community Form
+      form#create-community-form.form-card(style='display: none;')
+        h4 Create New Community
+        .form-group
+          label(for='community-name') Community Name
+          input#community-name(type='text', name='name', required)
+        button.btn.btn-primary(type='submit') Create Community
+        #create-community-message.message(hidden)
+        #community-invite-code-display.invite-code(hidden)
+
+      //- Join Community Form
+      form#join-community-form.form-card(style='display: none;')
+        h4 Join Community
+        .form-group
+          label(for='community-invite-code') Invite Code
+          input#community-invite-code(type='text', name='invite_code', required)
+        button.btn.btn-primary(type='submit') Join Community
+        #join-community-message.message(hidden)
+
+      #communities-list.communities-list
+        .empty-state Loading communities...

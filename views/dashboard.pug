@@ -1,0 +1,212 @@
+//- ========================================================
+//- dashboard.pug — Main Dashboard Template
+//- ========================================================
+//- This is the main dashboard page that extends layout.pug
+//- It includes all the different sections (tabs) of the dashboard:
+//- - Overview: Summary stats and recent activity
+//- - Exercise: Log workouts (cardio/strength)
+//- - Diet: Log meals and manage custom foods
+//- - Stats: Goals, records, and progress charts
+//- - Groups: Create and join fitness groups
+//- - Library: Browse exercise database
+//- - Routines: Create and manage workout plans
+//- - Social: Feed and community features
+//- Also includes all the modal dialogs for editing
+//- ========================================================
+
+extends layout
+
+block content
+
+  //- ── OVERVIEW SECTION ──────────────────────────── 
+  //- First tab: Summary of activity and recent workouts/meals
+  include ./overview.pug
+
+  //- ── EXERCISE SECTION ──────────────────────────── 
+  //- Log cardio or strength training workouts
+  include ./exercise.pug
+
+  //- ── DIET SECTION ──────────────────────────────── 
+  //- Log meals and manage nutrition
+  include ./diet.pug
+
+  //- ── STATS SECTION ──────────────────────────────── 
+  //- View goals, records, and progress charts
+  include ./stats.pug
+
+  //- ── GROUPS SECTION ──────────────────────────────── 
+  //- Create and manage fitness groups
+  include ./groups.pug
+
+  //- ── EXERCISE LIBRARY SECTION ──────────────────────────── 
+  //- Browse and search exercises
+  include ./library.pug
+
+  //- ── WORKOUT ROUTINES SECTION ──────────────────────────── 
+  //- Create and manage workout routines
+  include ./routines.pug
+
+  //- ── SOCIAL FEED SECTION ──────────────────────────── 
+  //- Social feed and community features
+  include ./social.pug
+
+  //- ── EDIT EXERCISE MODAL ──────────────────────────── 
+  //- Modal for editing logged exercise entries
+  dialog#edit-exercise-modal.modal-backdrop
+    form#edit-exercise-form.modal-content(novalidate)
+      h3.modal-title Edit Exercise Entry
+
+      input(type='hidden', id='edit-ex-id')
+
+      .form-row
+        .form-group
+          label(for='edit-ex-type') Activity type
+          select#edit-ex-type(name='activity_type', required)
+            option(value='') Select type
+            option(value='Running') Running
+            option(value='Cycling') Cycling
+            option(value='Swimming') Swimming
+            option(value='Walking') Walking
+            option(value='HIIT') HIIT
+            option(value='Rowing') Rowing
+            option(value='Bench Press') Bench Press
+            option(value='Squat') Squat
+            option(value='Deadlift') Deadlift
+            option(value='Overhead Press') Overhead Press
+            option(value='Pull Ups') Pull Ups
+            option(value='Custom') Custom
+
+        .form-group
+          label(for='edit-ex-name') Exercise name
+          input#edit-ex-name(type='text', name='activity_name', required)
+
+      #edit-cardio-fields.conditional-fields
+        .form-row
+          .form-group
+            label(for='edit-ex-duration') Duration (mins)
+            input#edit-ex-duration(type='number', name='duration_mins', min='1')
+          .form-group
+            label(for='edit-ex-distance') Distance (km)
+            input#edit-ex-distance(type='number', name='distance_km', min='0', step='0.1')
+
+      #edit-strength-fields.conditional-fields(hidden)
+        .form-row
+          .form-group
+            label(for='edit-ex-sets') Sets
+            input#edit-ex-sets(type='number', name='sets', min='1')
+          .form-group
+            label(for='edit-ex-reps') Reps
+            input#edit-ex-reps(type='number', name='reps', min='1')
+          .form-group
+            label(for='edit-ex-weight') Weight (kg)
+            input#edit-ex-weight(type='number', name='weight_kg_used', min='0', step='0.5')
+
+      .form-group
+        label(for='edit-ex-calories') Calories burned
+        input#edit-ex-calories(type='number', name='calories_burned', min='0', required)
+
+      .modal-actions
+        button.btn.btn-primary(type='submit') Save Changes
+        button.btn.btn-secondary#edit-ex-close(type='button') Cancel
+        button.btn.btn-danger#edit-ex-delete(type='button') Delete Entry
+
+      p#edit-exercise-message.form-message(aria-live='polite')
+
+  //- ── EDIT MEAL MODAL ────────────────────────────────── 
+  //- Modal for editing logged meal entries
+  dialog#edit-meal-modal.modal-backdrop
+    form#edit-meal-form.modal-content(novalidate)
+      h3.modal-title Edit Meal Entry
+
+      input(type='hidden', id='edit-meal-id')
+
+      .form-row
+        .form-group
+          label(for='edit-meal-food-name') Food name
+          input#edit-meal-food-name(type='text', name='food_name', required)
+        .form-group
+          label(for='edit-meal-type') Meal type
+          select#edit-meal-type(name='meal_type', required)
+            option(value='') Select meal
+            option(value='breakfast') Breakfast
+            option(value='lunch') Lunch
+            option(value='dinner') Dinner
+            option(value='snack') Snack
+
+      .form-row
+        .form-group
+          label(for='edit-meal-calories') Calories (kcal)
+          input#edit-meal-calories(type='number', name='calories', min='0', required)
+        .form-group
+          label(for='edit-meal-quantity') Quantity / portions
+          input#edit-meal-quantity(type='number', name='quantity', min='0.1', step='0.1', value='1')
+
+      .modal-actions
+        button.btn.btn-primary(type='submit') Save Changes
+        button.btn.btn-secondary#edit-meal-close(type='button') Cancel
+        button.btn.btn-danger#edit-meal-delete(type='button') Delete Entry
+
+      p#edit-meal-message.form-message(aria-live='polite')
+
+  //- ── CREATE ROUTINE MODAL ────────────────────────────── 
+  //- Modal for creating new workout routines
+  dialog#create-routine-modal.modal-backdrop
+    form#create-routine-form.modal-content(novalidate)
+      h3.modal-title Create New Workout Routine
+
+      .form-row
+        .form-group
+          label(for='routine-name') Routine Name *
+          input#routine-name(type='text', name='name', required, maxlength='100')
+        .form-group
+          label(for='routine-difficulty') Difficulty
+          select#routine-difficulty(name='difficulty')
+            option(value='beginner') Beginner
+            option(value='intermediate', selected) Intermediate
+            option(value='advanced') Advanced
+
+      .form-group
+        label(for='routine-description') Description
+        textarea#routine-description(name='description', rows='3', maxlength='500', placeholder='Describe your workout routine...')
+
+      .form-row
+        .form-group
+          label(for='routine-time') Estimated Time (minutes)
+          input#routine-time(type='number', name='estimated_time', min='1', max='300')
+        .form-group
+          label(for='routine-public')
+            input#routine-public(type='checkbox', name='is_public')
+            | Make this routine public
+
+      .form-group
+        label Exercises
+        #routine-exercises.routine-exercises-list
+          .empty-state No exercises added yet. Add your first exercise below.
+        button.btn.btn-sm#add-exercise-btn(type='button') + Add Exercise
+
+      .modal-actions
+        button.btn.btn-primary(type='submit') Create Routine
+        button.btn.btn-secondary#create-routine-close(type='button') Cancel
+
+      p#create-routine-message.form-message(aria-live='polite')
+
+  //- ── START WORKOUT MODAL ──────────────────────────── 
+  //- Modal for starting workouts from routines
+  dialog#start-workout-modal.modal-backdrop
+    form#start-workout-form.modal-content(novalidate)
+      h3.modal-title
+        | Start Workout: 
+        span#start-routine-name
+
+      input(type='hidden', id='routine-id-field')
+
+      .form-group
+        label Exercises in this routine (edit details before starting):
+        #start-routine-exercises.routine-exercises-list
+          .empty-state Loading exercises...
+
+      .modal-actions
+        button.btn.btn-primary(type='submit') Start Workout
+        button.btn.btn-secondary#start-workout-close(type='button') Cancel
+
+      p#start-workout-message.form-message(aria-live='polite')
