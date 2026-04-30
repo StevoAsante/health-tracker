@@ -10,10 +10,10 @@
 //   4. Showing helpful success/error messages on screen
 //
 // HOW THIS FILE CONNECTS TO THE HTML:
-//   index.html loads this file via:  <script src="/js/auth.js">
+//   views/index.pug loads this file via:  <script src="/javascripts/auth.js">
 //   This file finds HTML elements by their id attributes,
 //   e.g. document.getElementById('login-form') finds:
-//   <form id="login-form"> in index.html
+//   <form id="login-form"> in views/index.pug
 //
 // HOW THIS FILE TALKS TO THE BACKEND:
 //   We use the Fetch API — a built-in browser tool that sends

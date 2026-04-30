@@ -15,7 +15,7 @@
 //   ► Logout button
 //
 // HOW IT CONNECTS TO THE HTML:
-//   dashboard.html loads this file via: <script src="/js/dashboard.js">
+//   dashboard.html loads this file via: <script src="/javascripts/dashboard.js">
 //   This file finds elements by their id="" attributes and
 //   listens for user interactions (clicks, form submissions).
 //
