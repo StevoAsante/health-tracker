@@ -260,6 +260,444 @@ select {
 .form-message.success { color: var(--success); }
 .form-message.error   { color: var(--error); }
 
+/* ── STATS PAGE ─────────────────────────────────────────── */
+#section-stats {
+  padding: 2rem 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stats-header {
+  margin-bottom: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-heading {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.period-toggle {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #ddd;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  color: #666;
+}
+
+.period-btn:hover {
+  border-color: #c8ff00;
+  color: #333;
+}
+
+.period-btn.active {
+  background: #c8ff00;
+  border-color: #c8ff00;
+  color: #000;
+  box-shadow: 0 4px 12px rgba(200, 255, 0, 0.3);
+}
+
+.stats-spinner {
+  text-align: center;
+  padding: 2rem;
+}
+
+.spinner-ring {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #c8ff00;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.subsection-heading {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.stats-section {
+  margin-bottom: 3rem;
+}
+
+.kpi-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 2px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+  border-color: #c8ff00;
+  box-shadow: 0 4px 12px rgba(200, 255, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.kpi-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.kpi-content {
+  flex: 1;
+}
+
+.kpi-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.kpi-value {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.kpi-unit {
+  font-size: 0.9rem;
+  color: #999;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 2px dashed #ddd;
+}
+
+.hint {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.stats-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .stats-two-column {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats-column {
+  background: #fff;
+  border: 2px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.goals-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.goal-item {
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.goal-item:hover {
+  background: #fff;
+  border-color: #c8ff00;
+  box-shadow: 0 4px 12px rgba(200, 255, 0, 0.1);
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.goal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.goal-status {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 600;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.goal-status.achieved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.goal-content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.goal-gauge {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.gauge-circle {
+  width: 100%;
+  height: 100%;
+}
+
+.gauge-progress {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.gauge-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gauge-percentage {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.goal-details {
+  flex: 1;
+}
+
+.goal-progress {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.goal-type {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.goal-deadline {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.goal-edit-panel {
+  margin-top: 1.5rem;
+  border-top: 1px solid #e8e8e8;
+  padding-top: 1.5rem;
+}
+
+.goal-edit-panel.hidden {
+  display: none;
+}
+
+.goal-edit-panel .form-row {
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.goal-edit-panel .form-group {
+  min-width: 180px;
+  flex: 1;
+}
+
+.strength-highlights-panel {
+  margin-bottom: 2rem;
+}
+
+.strength-highlight-card {
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.strength-highlight-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.strength-highlight-value {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #000;
+}
+
+.strength-highlight-detail {
+  margin: 0.5rem 0 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.chart-section {
+  margin-bottom: 2rem;
+}
+
+.chart-section:last-child {
+  margin-bottom: 0;
+}
+
+.chart-title {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.chart-container {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  position: relative;
+  height: 300px;
+}
+
+.chart-container canvas {
+  max-height: 300px;
+}
+
+@media (max-width: 768px) {
+  #section-stats {
+    padding: 1.5rem 1rem;
+  }
+
+  .stats-header {
+    gap: 1rem;
+  }
+
+  .section-heading {
+    font-size: 1.5rem;
+  }
+
+  .period-toggle {
+    gap: 0.5rem;
+  }
+
+  .period-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .kpi-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .kpi-card {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .kpi-icon {
+    font-size: 2rem;
+  }
+
+  .kpi-value {
+    font-size: 1.5rem;
+  }
+
+  .stats-two-column {
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stats-column {
+    padding: 1rem;
+  }
+
+  .goal-content {
+    gap: 1rem;
+  }
+
+  .gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .gauge-percentage {
+    font-size: 1.5rem;
+  }
+
+  .goal-details {
+    flex: 1;
+  }
+
+  .chart-container {
+    height: 250px;
+    padding: 1rem;
+  }
+}
+
 /* ── AUTH PAGE (Login / Register) ─────────────────────────── */
 .auth-page {
   display: flex;

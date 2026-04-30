@@ -13,7 +13,8 @@ const StatsAppState = {
   stats: null,            // Current period stats
   goals: [],              // Active goals for current period
   chartDataWorkouts: [],  // Weekly workout trend data
-  chartDataCalories: [], // Calories trend data
+  chartDataCalories: [],  // Calories trend data
+  strengthHighlights: [], // Strength highlight cards
   isLoading: false,
   error: null
 };
@@ -27,8 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initStatsApp() {
   try {
     // Load initial data for default period (week)
-    await switchPeriod('week');
     setupPeriodButtons();
+    setupGoalForm();
+    await switchPeriod('week');
     console.log('Stats app ready');
   } catch (error) {
     console.error('Stats app init error:', error);
@@ -61,15 +63,16 @@ async function switchPeriod(period) {
 
   try {
     // Fetch all data in parallel for the selected period
-    const [statsRes, goalsRes, workoutsChartRes, caloriesChartRes] = await Promise.all([
+    const [statsRes, goalsRes, workoutsChartRes, caloriesChartRes, strengthRes] = await Promise.all([
       fetch(`/api/stats/summary/${period}`),
       fetch(`/api/stats/goals/${period}`),
       fetch(`/api/stats/chart/workouts/${period}`),
-      fetch(`/api/stats/chart/calories/${period}`)
+      fetch(`/api/stats/chart/calories/${period}`),
+      fetch(`/api/stats/strength-highlights/${period}`)
     ]);
 
-    if (!statsRes.ok || !goalsRes.ok) {
-      throw new Error(`Server error: ${statsRes.status || goalsRes.status}`);
+    if (!statsRes.ok || !goalsRes.ok || !strengthRes.ok) {
+      throw new Error(`Server error: ${statsRes.status || goalsRes.status || strengthRes.status}`);
     }
 
     // Parse responses
@@ -77,18 +80,21 @@ async function switchPeriod(period) {
     const goalsData = await goalsRes.json();
     const workoutsChartData = workoutsChartRes.ok ? await workoutsChartRes.json() : null;
     const caloriesChartData = caloriesChartRes.ok ? await caloriesChartRes.json() : null;
+    const strengthData = await strengthRes.json();
 
     // Update state
     StatsAppState.stats = statsData.stats;
     StatsAppState.goals = goalsData.goals || [];
     StatsAppState.chartDataWorkouts = workoutsChartData?.chartData || [];
     StatsAppState.chartDataCalories = caloriesChartData?.chartData || [];
+    StatsAppState.strengthHighlights = strengthData.highlights || [];
     StatsAppState.error = null;
 
     // Update UI for all sections
     updatePeriodButtons(period);
     renderKpiCards();
     renderGoalsSection();
+    renderStrengthHighlights();
     renderTrendsCharts();
 
   } catch (error) {
@@ -204,9 +210,14 @@ const goalsHTML = goals.map((goal, idx) => {
       <div class="goal-item">
         <div class="goal-header">
           <h4 class="goal-title">${title}</h4>
-          <span class="goal-status ${goal.status === 'ACHIEVED' ? 'achieved' : 'in-progress'}">
-            ${goal.status === 'ACHIEVED' ? '✓ Achieved' : 'In Progress'}
-          </span>
+          <div>
+            <span class="goal-status ${goal.status === 'ACHIEVED' ? 'achieved' : 'in-progress'}">
+              ${goal.status === 'ACHIEVED' ? '✓ Achieved' : 'In Progress'}
+            </span>
+            <button type="button" class="btn btn-secondary btn-sm goal-edit-btn" aria-expanded="false" aria-controls="goal-edit-${goal.id}">
+              Edit
+            </button>
+          </div>
         </div>
 
         <div class="goal-content">
@@ -246,11 +257,55 @@ const goalsHTML = goals.map((goal, idx) => {
             ` : ''}
           </div>
         </div>
+
+        <form id="goal-edit-${goal.id}" data-goal-id="${goal.id}" class="goal-edit-panel hidden">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="goal-description-${goal.id}">Description</label>
+              <input id="goal-description-${goal.id}" type="text" name="description" value="${escapeHTML(goal.description || '')}" />
+            </div>
+            <div class="form-group">
+              <label for="goal-target-${goal.id}">Target value</label>
+              <input id="goal-target-${goal.id}" type="number" name="target_value" min="0" step="0.1" value="${targetValue}" />
+            </div>
+            <div class="form-group">
+              <label for="goal-date-${goal.id}">Target date</label>
+              <input id="goal-date-${goal.id}" type="date" name="target_date" value="${goal.target_date || ''}" />
+            </div>
+          </div>
+          <p class="goal-edit-message form-message" aria-live="polite"></p>
+          <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+        </form>
       </div>
     `;
     }).join('');
 
   container.innerHTML = goalsHTML;
+  setupGoalEditButtons();
+}
+
+function renderStrengthHighlights() {
+  const container = document.getElementById('strength-highlights-container');
+  if (!container) return;
+
+  if (!StatsAppState.strengthHighlights || StatsAppState.strengthHighlights.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <p>No strength highlights available. Log a strength workout to populate this panel.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const cardsHTML = StatsAppState.strengthHighlights.map(highlight => `
+    <div class="strength-highlight-card">
+      <p class="strength-highlight-title">${highlight.title}</p>
+      <p class="strength-highlight-value">${highlight.value}</p>
+      <p class="strength-highlight-detail">${escapeHTML(highlight.detail)}</p>
+    </div>
+  `).join('');
+
+  container.innerHTML = cardsHTML;
 }
 
 // ── COMPONENT: TRENDS CHARTS ────────────────────────────
@@ -443,6 +498,112 @@ function setError(message) {
     errorEl.style.display = message ? 'block' : 'none';
   }
   StatsAppState.error = message;
+}
+
+function setupGoalForm() {
+  const form = document.getElementById('stats-goal-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const payload = {
+      goal_type: formData.get('goal_type'),
+      target_value: formData.get('target_value'),
+      target_date: formData.get('target_date'),
+      description: formData.get('description')
+    };
+
+    const messageEl = document.getElementById('stats-goal-message');
+    if (messageEl) {
+      messageEl.textContent = '';
+      messageEl.classList.remove('success', 'error');
+    }
+
+    try {
+      const response = await fetch('/api/goals/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to create goal.');
+      }
+
+      await switchPeriod(StatsAppState.selectedPeriod);
+      if (messageEl) {
+        messageEl.textContent = 'Goal saved successfully.';
+        messageEl.classList.add('success');
+      }
+      form.reset();
+    } catch (error) {
+      console.error('Goal save error:', error);
+      if (messageEl) {
+        messageEl.textContent = error.message;
+        messageEl.classList.add('error');
+      }
+    }
+  });
+}
+
+function setupGoalEditButtons() {
+  document.querySelectorAll('.goal-item').forEach(item => {
+    const editButton = item.querySelector('.goal-edit-btn');
+    const editPanel = item.querySelector('.goal-edit-panel');
+    if (!editButton || !editPanel) return;
+
+    editButton.addEventListener('click', () => {
+      editPanel.classList.toggle('hidden');
+    });
+
+    editPanel.addEventListener('submit', handleGoalEditSubmit);
+  });
+}
+
+async function handleGoalEditSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const goalId = form.dataset.goalId;
+  const formData = new FormData(form);
+  const messageEl = form.querySelector('.goal-edit-message');
+
+  if (messageEl) {
+    messageEl.textContent = '';
+    messageEl.classList.remove('success', 'error');
+  }
+
+  const payload = {
+    target_value: formData.get('target_value'),
+    target_date: formData.get('target_date'),
+    description: formData.get('description')
+  };
+
+  try {
+    const response = await fetch(`/api/goals/${goalId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.error || 'Failed to update goal.');
+    }
+
+    await switchPeriod(StatsAppState.selectedPeriod);
+    if (messageEl) {
+      messageEl.textContent = 'Goal updated successfully.';
+      messageEl.classList.add('success');
+    }
+  } catch (error) {
+    console.error('Goal update error:', error);
+    if (messageEl) {
+      messageEl.textContent = error.message;
+      messageEl.classList.add('error');
+    }
+  }
 }
 
 // ── FORMATTING HELPERS ──────────────────────────────────

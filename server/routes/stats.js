@@ -43,44 +43,45 @@ router.get('/summary/:period', requireLogin, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT
-         COUNT(*) AS workoutsCount,
-         COALESCE(SUM(duration_mins), 0) AS totalWorkoutMinutes,
-         COALESCE(SUM(calories_burned), 0) AS totalCaloriesBurned,
-         COALESCE(SUM(CASE WHEN sets > 0 AND reps > 0 AND weight_kg_used > 0 
-                            THEN sets * reps * weight_kg_used ELSE 0 END), 0) AS volumeKg,
+         COUNT(*) AS workouts_count,
+         COALESCE(SUM(duration_mins), 0) AS total_workout_minutes,
+         COALESCE(SUM(calories_burned), 0) AS total_calories_burned,
+         COALESCE(SUM(CASE WHEN sets > 0 AND reps > 0 AND weight_kg_used > 0
+                            THEN sets * reps * weight_kg_used ELSE 0 END), 0) AS volume_kg,
          CASE WHEN COUNT(*) > 0 THEN ROUND(COALESCE(SUM(duration_mins), 0)::numeric / COUNT(*), 2)
-              ELSE 0 END AS averageWorkoutMinutes
+              ELSE 0 END AS average_workout_minutes
        FROM exercise_entries
        WHERE user_id = $1
          AND logged_at >= ${interval}`,
       [req.session.userId]
     );
 
-    const exerciseStats = result.rows[0] || {
-      workoutsCount: 0,
-      totalWorkoutMinutes: 0,
-      totalCaloriesBurned: 0,
-      volumeKg: 0,
-      averageWorkoutMinutes: 0
+    const row = result.rows[0] || {};
+    const exerciseStats = {
+      workoutsCount: parseInt(row.workouts_count, 10) || 0,
+      totalWorkoutMinutes: parseInt(row.total_workout_minutes, 10) || 0,
+      totalCaloriesBurned: parseInt(row.total_calories_burned, 10) || 0,
+      volumeKg: parseFloat(row.volume_kg) || 0,
+      averageWorkoutMinutes: parseFloat(row.average_workout_minutes) || 0
     };
 
     // Fetch diet stats
     const dietResult = await db.query(
       `SELECT
-         COALESCE(SUM(calories), 0) AS totalCaloriesConsumed
+         COALESCE(SUM(calories), 0) AS total_calories_consumed
        FROM diet_entries
        WHERE user_id = $1
          AND logged_at >= ${interval}`,
       [req.session.userId]
     );
 
-    const dietStats = dietResult.rows[0] || { totalCaloriesConsumed: 0 };
+    const dietRow = dietResult.rows[0] || {};
 
     return res.status(200).json({
       period,
       stats: {
         ...exerciseStats,
-        totalCaloriesConsumed: parseInt(dietStats.totalCaloriesConsumed)
+        totalCaloriesConsumed: parseInt(dietRow.total_calories_consumed, 10) || 0
       }
     });
 
@@ -94,6 +95,14 @@ router.get('/summary/:period', requireLogin, async (req, res) => {
 // Returns goals filtered by period
 router.get('/goals/:period', requireLogin, async (req, res) => {
   const { period } = req.params;
+  const periodMap = {
+    workout_sessions: ['week', 'allTime'],
+    calories_burned: ['week', 'allTime'],
+    run_distance: ['week', 'allTime'],
+    volume: ['week', 'allTime'],
+    steps: ['day', 'allTime'],
+    weight: ['month', 'year', 'allTime']
+  };
 
   try {
     const result = await db.query(
@@ -105,24 +114,29 @@ router.get('/goals/:period', requireLogin, async (req, res) => {
       [req.session.userId]
     );
 
-    const goals = result.rows.map(goal => {
-      const targetValue = Number(goal.target_value) || 0;
-      const currentValue = Number(goal.current_value) || 0;
-      const progressPercentage = targetValue > 0 ? Math.round((currentValue / targetValue) * 100) : 0;
+    const goals = result.rows
+      .filter(goal => {
+        const allowedPeriods = periodMap[goal.goal_type] || ['allTime'];
+        return period === 'allTime' || allowedPeriods.includes(period);
+      })
+      .map(goal => {
+        const targetValue = Number(goal.target_value) || 0;
+        const currentValue = Number(goal.current_value) || 0;
+        const progressPercentage = targetValue > 0 ? Math.round((currentValue / targetValue) * 100) : 0;
 
-      return {
-        ...goal,
-        progressPercentage: Math.min(progressPercentage, 100),
-        status: progressPercentage >= 100 ? 'ACHIEVED' : 'IN_PROGRESS',
-        unit: {
-          calories_burned: 'kcal',
-          workout_sessions: 'sessions',
-          run_distance: 'km',
-          weight: 'kg',
-          steps: 'steps'
-        }[goal.goal_type] || ''
-      };
-    });
+        return {
+          ...goal,
+          progressPercentage: Math.min(progressPercentage, 100),
+          status: progressPercentage >= 100 ? 'ACHIEVED' : 'IN_PROGRESS',
+          unit: {
+            calories_burned: 'kcal',
+            workout_sessions: 'sessions',
+            run_distance: 'km',
+            weight: 'kg',
+            steps: 'steps'
+          }[goal.goal_type] || ''
+        };
+      });
 
     return res.status(200).json({ period, goals });
 
@@ -242,6 +256,84 @@ router.get('/chart/calories/:period', requireLogin, async (req, res) => {
   } catch (error) {
     console.error('Calories chart error:', error.message);
     return res.status(500).json({ error: 'Failed to load chart data.' });
+  }
+});
+
+// ── GET /api/stats/strength-highlights/:period ─────────────
+router.get('/strength-highlights/:period', requireLogin, async (req, res) => {
+  const { period } = req.params;
+  const interval = getIntervalSQL(period);
+
+  try {
+    const totalVolumeResult = await db.query(
+      `SELECT COALESCE(SUM(sets * reps * weight_kg_used), 0) AS total_volume
+       FROM exercise_entries
+       WHERE user_id = $1
+         AND exercise_category = 'strength'
+         AND logged_at >= ${interval}`,
+      [req.session.userId]
+    );
+
+    const bestWeightResult = await db.query(
+      `SELECT activity_name, sets, reps, weight_kg_used, logged_at
+       FROM exercise_entries
+       WHERE user_id = $1
+         AND exercise_category = 'strength'
+         AND weight_kg_used IS NOT NULL
+         AND logged_at >= ${interval}
+       ORDER BY weight_kg_used DESC
+       LIMIT 1`,
+      [req.session.userId]
+    );
+
+    const bestVolumeResult = await db.query(
+      `SELECT activity_name, sets, reps, weight_kg_used, logged_at,
+              (sets * reps * weight_kg_used) AS volume_kg
+       FROM exercise_entries
+       WHERE user_id = $1
+         AND exercise_category = 'strength'
+         AND sets IS NOT NULL
+         AND reps IS NOT NULL
+         AND weight_kg_used IS NOT NULL
+         AND logged_at >= ${interval}
+       ORDER BY volume_kg DESC
+       LIMIT 1`,
+      [req.session.userId]
+    );
+
+    const totalVolume = parseFloat(totalVolumeResult.rows[0]?.total_volume) || 0;
+    const bestWeightEntry = bestWeightResult.rows[0] || null;
+    const bestVolumeEntry = bestVolumeResult.rows[0] || null;
+
+    const highlights = [
+      {
+        title: 'Total strength volume',
+        value: `${Math.round(totalVolume)} kg`,
+        detail: 'Sum of weight × reps × sets'
+      }
+    ];
+
+    if (bestWeightEntry) {
+      highlights.push({
+        title: 'Heaviest lift',
+        value: `${bestWeightEntry.weight_kg_used} kg`,
+        detail: `${bestWeightEntry.activity_name} — ${bestWeightEntry.sets}×${bestWeightEntry.reps}`
+      });
+    }
+
+    if (bestVolumeEntry) {
+      highlights.push({
+        title: 'Best volume set',
+        value: `${Math.round(bestVolumeEntry.volume_kg)} kg`,
+        detail: `${bestVolumeEntry.activity_name} — ${bestVolumeEntry.sets}×${bestVolumeEntry.reps}`
+      });
+    }
+
+    return res.status(200).json({ period, highlights });
+
+  } catch (error) {
+    console.error('Strength highlights error:', error.message);
+    return res.status(500).json({ error: 'Failed to load strength highlights.' });
   }
 });
 
