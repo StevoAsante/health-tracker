@@ -1,0 +1,80 @@
+//- ========================================================
+//- index.pug — Login / Registration Page
+//- ========================================================
+//- This page extends layout.pug so it uses the shared
+//- stylesheet, while still rendering the auth flow without
+//- the dashboard header/navigation.
+//- ========================================================
+
+extends layout
+
+block content
+  .auth-container
+    header.auth-header
+      .logo-mark(aria-hidden='true') HT
+      h1.brand-name Health Tracker
+      p.brand-tagline Tailoring your lifestyle plans at your fingertips.
+
+    nav.auth-tabs(role='tablist' aria-label='Login or Register')
+      button.tab-btn.active#tab-login(type='button', role='tab', aria-selected='true', aria-controls='panel-login', data-tab='login') Log In
+      button.tab-btn#tab-register(type='button', role='tab', aria-selected='false', aria-controls='panel-register', data-tab='register') Sign Up
+
+    section#panel-login.auth-panel.active(role='tabpanel', aria-labelledby='tab-login')
+      form#login-form(novalidate)
+        h2.panel-heading Welcome back
+
+        .form-group
+          label(for='login-email') Email address
+          input#login-email(type='email', name='email', placeholder='you@email.com', autocomplete='email', required)
+
+        .form-group
+          label(for='login-password') Password
+          input#login-password(type='password', name='password', placeholder='Your password', autocomplete='current-password', required)
+
+        p.form-message#login-message(aria-live='polite')
+        button.btn.btn-primary.btn-full#login-submit-btn(type='submit') Log In
+
+    section#panel-register.auth-panel(role='tabpanel', aria-labelledby='tab-register', hidden)
+      form#register-form(novalidate)
+        h2.panel-heading Create your account
+
+        .form-row
+          .form-group
+            label(for='reg-username') Username
+            input#reg-username(type='text', name='username', placeholder='alex01', autocomplete='username', required)
+
+          .form-group
+            label(for='reg-name') Full name
+            input#reg-name(type='text', name='real_name', placeholder='Alex Smith', autocomplete='name', required)
+
+        .form-group
+          label(for='reg-email') Email address
+          input#reg-email(type='email', name='email', placeholder='you@email.com', autocomplete='email', required)
+
+        .form-group
+          label(for='reg-password') Password
+          span.hint (min. 6 characters)
+          input#reg-password(type='password', name='password', placeholder='Create a password', autocomplete='new-password', required)
+
+        fieldset.stats-fieldset
+          legend Physical details
+            span.hint (optional)
+
+          .form-row
+            .form-group
+              label(for='reg-height') Height (cm)
+              input#reg-height(type='number', name='height_cm', placeholder='175', min='100', max='250')
+
+            .form-group
+              label(for='reg-weight') Weight (kg)
+              input#reg-weight(type='number', name='weight_kg', placeholder='70', min='30', max='300', step='0.1')
+
+            .form-group
+              label(for='reg-age') Age
+              input#reg-age(type='number', name='age', placeholder='22', min='13', max='120')
+
+        p.form-message#register-message(aria-live='polite')
+        button.btn.btn-primary.btn-full#register-submit-btn(type='submit') Create Account
+
+block scripts
+  script(src='/js/auth.js')

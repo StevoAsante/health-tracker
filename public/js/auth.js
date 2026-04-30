@@ -2,7 +2,7 @@
 // auth.js — Login & Registration Page Logic
 // ============================================================
 // This file handles everything that happens on the login/register
-// page (public/index.html):
+// page (views/index.pug):
 //
 //   1. Switching between the Login and Register tabs
 //   2. Submitting the login form and redirecting to dashboard

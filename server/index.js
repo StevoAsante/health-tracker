@@ -108,9 +108,13 @@ app.use('/api/stats',    statsRoutes);     // /api/stats/summary, /api/stats/cha
 // The static middleware above handles CSS/JS files automatically,
 // but we need these explicit routes for pages that need auth checks.
 
-// Root URL serves the login/register page
+// Root URL serves the login/register page using the Pug view.
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.render('index', {
+    pageTitle: 'Health Tracker — Log In',
+    bodyClass: 'auth-page',
+    hideHeader: true
+  });
 });
 
 // Dashboard is protected — if not logged in, redirect to login.

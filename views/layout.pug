@@ -14,41 +14,44 @@ html(lang='en')
     title= pageTitle || 'Health Tracker — Dashboard'
     link(rel='stylesheet', href='/css/style.css')
 
-  body.dashboard-page
+  body(class=bodyClass || 'dashboard-page')
 
-    //- ========================================================
-    //- HEADER SECTION — Top navigation bar
-    //- ========================================================
-    //- This header appears on every dashboard page
-    //- It contains the app logo, navigation buttons, and user menu
-    header.app-header
-      .header-brand
-        span.logo-mark-sm(aria-hidden='true') HT
-        span.header-app-name Health Tracker
+    if !hideHeader
+      //- ========================================================
+      //- HEADER SECTION — Top navigation bar
+      //- ========================================================
+      //- This header appears on every dashboard page
+      //- It contains the app logo, navigation buttons, and user menu
+      header.app-header
+        .header-brand
+          span.logo-mark-sm(aria-hidden='true') HT
+          span.header-app-name Health Tracker
 
-      //- Main navigation buttons — clicking these shows/hides sections
-      nav.header-nav(aria-label='Main navigation')
-        button.nav-btn.active(data-section='overview', aria-current='page') Overview
-        button.nav-btn(data-section='exercise') Exercise
-        button.nav-btn(data-section='library') Library
-        button.nav-btn(data-section='routines') Routines
-        button.nav-btn(data-section='social') Social
-        button.nav-btn(data-section='diet') Diet
-        button.nav-btn(data-section='stats') Stats
+        //- Main navigation buttons — clicking these shows/hides sections
+        nav.header-nav(aria-label='Main navigation')
+          button.nav-btn.active(data-section='overview', aria-current='page') Overview
+          button.nav-btn(data-section='exercise') Exercise
+          button.nav-btn(data-section='library') Library
+          button.nav-btn(data-section='routines') Routines
+          button.nav-btn(data-section='social') Social
+          button.nav-btn(data-section='diet') Diet
+          button.nav-btn(data-section='stats') Stats
 
-      //- User menu — shows greeting and logout button
-      //- The profile button opens the settings page when clicked.
-      .header-user
-        button#profile-btn.btn.btn-sm(type='button', aria-label='Open profile settings')
-          span.profile-icon(aria-hidden='true') 👤
-          span#user-greeting.user-greeting Hey, —
-        button.btn.btn-outline.btn-sm#logout-btn(type='button') Log Out
+        //- User menu — shows greeting and logout button
+        //- The profile button opens the settings page when clicked.
+        .header-user
+          button#profile-btn.btn.btn-sm(type='button', aria-label='Open profile settings')
+            span.profile-icon(aria-hidden='true') 👤
+            span#user-greeting.user-greeting Hey, —
+          button.btn.btn-outline.btn-sm#logout-btn(type='button') Log Out
 
     //- ========================================================
     //- MAIN CONTENT AREA — Where page content goes
     //- ========================================================
     //- Each page that extends this layout puts its content here
     //- This is defined by "block content" in child templates
-    main.dashboard-main
+    main(class=mainClass || 'dashboard-main')
       block content
+
+    block scripts
 
